@@ -17,6 +17,7 @@ installed on your system:
   - [numpy](https://www.numpy.org) \>=1.6.2
   - [scipy](https://www.scipy.org) \>=0.19.0
   - [freetype-py](https://github.com/rougier/freetype-py) \>=1.1
+  - argparse \>=1.4.0
 
 ### Install from Python Packaging Index
 
