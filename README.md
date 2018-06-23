@@ -9,6 +9,25 @@ the engraving cycle 225 with QS-parameters.
 
 ![Path details](/screenshots/screen_3.png?raw=true "Path details")
 
+## Requirements
+To use the resulting Klartext code on a control, it has to have the following
+cycles and functions:
+
+  - cycle 7
+  - cycle 10
+  - cycle 26
+  - INSTR
+  - STRLEN
+  - STRCOMP
+  - FN 9
+  - FN 10
+  - FN 12
+
+Testing was done on a machine with TNC 620 with software version 817600-03. As
+long as the requirements listed above are met, it should work fine.
+Support for smaller controls like TNC 128 is untested but the output does not
+contain any circular path's.
+
 ## Installation
 
 To be able to use type2nc, you need python 3 and the following library's
@@ -120,11 +139,12 @@ range of characters to specific sections of the unicode standard:
 * MISC_TECH_CHARS: 0x2300 to 0x23FF
 * MISC_SYMBOLS: 0x2600 to 0x26FF
 * DINGBATS: 0x2700 to 0x27BF
-* CJK_UNIFIED_IDEOGRAPHS_PART1: 0x4E00 to 0x62FF
-* CJK_UNIFIED_IDEOGRAPHS_PART2: 0x6300 to 0x77FF
-* CJK_UNIFIED_IDEOGRAPHS_PART3: 0x7800 to 0x8CFF
-* CJK_UNIFIED_IDEOGRAPHS_PART4: 0x8D00 to 0x9FFF
+* CJK_UNIFIED_IDEOGRAPHS_PART1: 0x4E00 to 0x9FFF
 
 This results in a total of 23535 characters
 
 If you need more or other characters, let me know and i will add them.
+
+### Windows Installer
+There is no All-In-One installer available. If there is enough interest, i may
+look into building an installer version.

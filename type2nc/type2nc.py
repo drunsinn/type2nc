@@ -8,9 +8,11 @@ import os
 import platform
 import datetime
 import string
-import unicodedata
+# import unicodedata
 import tkinter as tk
-import tkinter.filedialog, tkinter.simpledialog
+import tkinter.filedialog as tkfd
+import tkinter.simpledialog as tksd
+import tkinter.messagebox as tkmb
 import argparse
 import numpy as np
 from scipy.special import binom
@@ -39,94 +41,55 @@ class Type2NC(object):
     MISC_TECH_CHARS = list(range(0x2300, 0x23FF + 1))
     MISC_SYMBOLS = list(range(0x2600, 0x26FF + 1))
     DINGBATS = list(range(0x2700, 0x27BF + 1))
-    CJK_UNIFIED_IDEOGRAPHS_PART1 = list(range(0x4E00, 0x62FF + 1))
-    CJK_UNIFIED_IDEOGRAPHS_PART2 = list(range(0x6300, 0x77FF + 1))
-    CJK_UNIFIED_IDEOGRAPHS_PART3 = list(range(0x7800, 0x8CFF + 1))
-    CJK_UNIFIED_IDEOGRAPHS_PART4 = list(range(0x8D00, 0x9FFF + 1))
+    CJK_UNIFIED_IDEOGRAPHS_PART = list(range(0x4E00, 0x9FFF + 1))
 
     def __init__(self, bezier_step_size, char_list, output_folder, size_pt=50,
-                 size_dpi=100, target_height=10):
+                 size_dpi=100, target_height=10, skip_empty=False):
         self.__bezier_step_size = bezier_step_size
         self.__char_list = char_list
         self.__output_folder = output_folder
         self.__charsize_pt = size_pt
         self.__charsize_dpi = size_dpi
         self.__chartarget_height = target_height
+        self.__skip_empty = skip_empty
         self.__nc_file_list = list()
 
     def type2font(self, font_file_path):
         face = ft.Face(font_file_path)
-        print("File: {0:s}, Font: {1:s}, Style: {2:s}, Number of characters:{3:d}".format(
-              font_file_path,
-              face.family_name.decode("utf-8"),
-              face.style_name.decode("utf-8"),
-              len(self.__char_list)))
+        print("File: {0:s}".format(font_file_path))
+        print("Font: {0:s}, Style: {1:s}".format(
+            face.family_name.decode("utf-8"),
+            face.style_name.decode("utf-8")))
+        if self.__skip_empty:
+            print("skipping empty characters")
 
         face.set_char_size(height=self.__charsize_pt * self.__charsize_dpi)
 
         char_lines = []
         char_data_collection = list()
+        empty_char_list = list()
         x_max = 0
 
         for char in self.__char_list:
-            char_data = dict()
-            char_data['plain'] = str(char)
-            char_data['ord'] = ord(chr(char))
-            char_data['paths'], char_data[
-                'info'] = self.get_paths_of_char(face, char)
-            char_data['text'] = self.get_label_name_from_char(char)
-            char_data_collection.append(char_data)
+            if self.__skip_empty and face.get_char_index(char) == 0:
+                empty_char_list.append(char)
+            else:
+                char_data = dict()
+                char_data['plain'] = str(char)
+                char_data['ord'] = ord(chr(char))
+                char_data['paths'], char_data[
+                    'info'] = self.get_paths_of_char(face, char)
+                char_data['text'] = self.get_char_name(char)
 
-            # find the highest charakter to calculate the scale factor
-            if char_data['info']['x_max'] > x_max:
-                x_max = char_data['info']['x_max']
+                char_data_collection.append(char_data)
+                # find the highest charakter to calculate the scale factor
+                if char_data['info']['x_max'] > x_max:
+                    x_max = char_data['info']['x_max']
 
         scale_factor = self.__chartarget_height / x_max
 
         for char_data in char_data_collection:
-            try:
-                plain_char_name = char_data['plain']
-            except ValueError as e:
-                plain_char_name = char_data['plain']
-            if char_data['text'] is not None:
-                char_lines.append('* -   {0:s}'.format(char_data['text']))
-                char_lines.append('LBL "{0:s}"'.format(char_data['text']))
-            else:
-                char_lines.append('* -   Unicode Hex:0x{0:04x}: {1:s}'.format(
-                        char_data['ord'], plain_char_name))
-            char_lines.append('LBL "0x{0:04x}"'.format(char_data['ord']))
-
-            for path in char_data['paths']:
-
-                first_point = path[0]
-                char_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FMAX'.format(
-                    first_point[0] * scale_factor,
-                    first_point[1] * scale_factor))
-                char_lines.append('L  Z+QL15')
-
-                for point in path[1:]:
-                    char_lines.append('L  X{0:+0.4f}  Y{1:+0.4f}'.format(
-                        point[0] * scale_factor, point[1] * scale_factor))
-
-                if not (first_point[0] == point[0] and
-                        first_point[1] == point[1]):
-                    char_lines.append('L  X{0:+0.4f}  Y{1:+0.4f}'.format(
-                        first_point[0] * scale_factor,
-                        first_point[1] * scale_factor))
-
-                char_lines.append('L  Z+Q1602')
-
-            if char_data['text'] is not None:
-                char_lines.append('LBL "{0:s}_X-Advance"'.format(
-                    char_data['text']))
-            char_lines.append('LBL "0x{0:04x}_X-Advance"'.format(
-                char_data['ord']))
-
-            char_lines.append('QL20 = {0:+f} ; X-Advance'.format(
-                char_data['info']['x_advance'] * scale_factor))
-
-            char_lines.append('LBL 0')
-            char_lines.append(';')
+            char_lines.extend(self.create_char_lable(char_data, scale_factor))
 
         nc_file_name = os.path.basename(font_file_path).split('.')[0] + '.H'
         nc_file_name = nc_file_name.replace(' ', '_')
@@ -166,25 +129,87 @@ class Type2NC(object):
         output_fp.close()
 
         file_size = os.path.getsize(output_file_path)
-        print("Number of NC-Code lines: {0:d}, File size: {1:d} bytes".format(len(output_lines), file_size))
-        return nc_file_name
+        if self.__skip_empty is True:
+            print("{0:d} of {1:d} selected characters were found empty".format(
+                len(empty_char_list),
+                len(self.__char_list)))
+        else:
+            print("{0:d} characters were selected".format(
+                len(self.__char_list)))
+        print("lines: {0:d}, file size: {1:d} bytes".format(len(output_lines),
+                                                            file_size))
 
-    def get_point_on_bezier_curve(self, points, t):
-        if t < 0.0 or t > 1.0:
-            raise ValueError()
-        n = len(points) - 1
+    def create_char_lable(self, char_data, scale_factor):
+        """Generate klartext code for character
+
+        Keyword arguments:
+        char_data -- information on the character
+        scale_factor -- factor for scaling the x and y values
+        """
+        char_lines = list()
+        if char_data['text'] is not None:
+            char_lines.append('* -   {0:s}'.format(char_data['text']))
+            char_lines.append('LBL "{0:s}"'.format(char_data['text']))
+        else:
+            char_lines.append('* -   Unicode Hex:0x{0:04x}: {1:s}'.format(
+                char_data['ord'], char_data['plain']))
+            char_lines.append('LBL "0x{0:04x}"'.format(char_data['ord']))
+
+        for path in char_data['paths']:
+            char_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FMAX'.format(
+                path[0][0] * scale_factor,
+                path[0][1] * scale_factor))
+            char_lines.append('L  Z+QL15')
+            for point in path[1:]:
+                char_lines.append('L  X{0:+0.4f}  Y{1:+0.4f}'.format(
+                    point[0] * scale_factor, point[1] * scale_factor))
+            if not (path[0][0] == point[0] and
+                    path[0][1] == point[1]):
+                char_lines.append('L  X{0:+0.4f}  Y{1:+0.4f}'.format(
+                    path[0][0] * scale_factor,
+                    path[0][1] * scale_factor))
+
+        char_lines.append('L  Z+Q1602')
+        if char_data['text'] is not None:
+            char_lines.append('LBL "{0:s}_X-Advance"'.format(char_data['text']))
+        char_lines.append('LBL "0x{0:04x}_X-Advance"'.format(char_data['ord']))
+        char_lines.append('QL20 = {0:+f} ; X-Advance'.format(
+            char_data['info']['x_advance'] * scale_factor))
+        char_lines.append('LBL 0')
+        char_lines.append(';')
+        return char_lines
+
+    def point_on_curve(self, point_list, distance_factor):
+        """Get x and y coordinate for point along a bezier curve relative to
+        the lenght of the curve.
+
+        Keyword arguments:
+        point_list -- points defining the bezier curve
+        distance_factor -- relative distance
+        """
+        if distance_factor < 0.0 or distance_factor > 1.0:
+            raise ValueError("factor has to be a value between 0 and 1")
+        n = len(point_list) - 1
         c_t_x = 0
         c_t_y = 0
-        for i, point in enumerate(points):
-            b_i_n = binom(n, i) * (t ** i) * np.power((1 - t), (n - i))
+        for i, point in enumerate(point_list):
+            b_i_n = binom(n, i) * (distance_factor ** i) *\
+                    np.power((1 - distance_factor), (n - i))
             c_t_x += b_i_n * point[0]
             c_t_y += b_i_n * point[1]
         return c_t_x, c_t_y
 
-    def get_paths_of_char(self, fontFace, char):
+    def get_paths_of_char(self, font_face, char):
+        """Get list of x and y coordinates the outline of a character. Also
+        returns information about the charkter.
+
+        Keyword arguments:
+        font_face -- freetype font face from the selected font file
+        char -- character which should be converted
+        """
         char_info = dict()
-        fontFace.load_char(char)
-        slot = fontFace.glyph
+        font_face.load_char(char)
+        slot = font_face.glyph
         outline = slot.outline
         paths = []
 
@@ -193,8 +218,9 @@ class Type2NC(object):
             char_info['x_advance'] = slot.advance.x
             char_info['y_advance'] = slot.advance.y
         else:
-            points = np.array(outline.points, dtype=[('x', float), ('y', float)])
-            x, y = points['x'], points['y']
+            points = np.array(outline.points,
+                              dtype=[('x', float), ('y', float)])
+            x = points['x']
             start, end = 0, 0
             char_info['x_max'] = x.max()
             char_info['x_advance'] = slot.advance.x
@@ -234,82 +260,57 @@ class Type2NC(object):
                                 1.0 / self.__bezier_step_size,
                                 endpoint=True):
                             path_points.append(
-                                self.get_point_on_bezier_curve(segment, t))
+                                self.point_on_curve(segment, t))
 
                 paths.append(path_points)
                 start = end + 1
 
         return paths, char_info
 
-    def get_label_name_from_char(self, char):
+    def get_char_name(self, char):
+        """Get name of character for lable call.
+
+        Keyword arguments:
+        char -- character
+        """
+        char_names = {
+            '!': 'exclamation_mark',
+            '\'': 'apostrophe',
+            '(': 'opening_parenthese',
+            ')': 'closing_parenthese',
+            '*': 'asterisk',
+            '+': 'plus',
+            '/': 'slash',
+            ':': 'colon',
+            ';': 'semicolon',
+            '<': 'less_than',
+            '=': 'equal',
+            '>': 'greater_than',
+            '?': 'question_mark',
+            '@': 'at',
+            '[': 'opening_square_brackets',
+            '\\': 'backslash',
+            ']': 'closing_square_brackets',
+            '^': 'caret',
+            '"': 'quotation_marks',
+            '`': 'prime',
+            '{': 'opening_braces',
+            '|': 'pipe',
+            '}': 'closing_braces',
+            '~': 'tilde',
+            'ä': 'ae',
+            'ö': 'oe',
+            'ü': 'ue',
+            'Ä': 'AE',
+            'Ö': 'OE',
+            'Ü': 'UE',
+            ' ': 'space',
+        }
         char = chr(char)
-        if char in string.punctuation:
-            if '!' in char:
-                nameOfChar = 'exclamation_mark'
-            elif '\'' in char:
-                nameOfChar = 'apostrophe'
-            elif '(' in char:
-                nameOfChar = 'opening_parenthese'
-            elif ')' in char:
-                nameOfChar = 'closing_parenthese'
-            elif '*' in char:
-                nameOfChar = 'asterisk'
-            elif '+' in char:
-                nameOfChar = 'plus'
-            elif '/' in char:
-                nameOfChar = 'slash'
-            elif ':' in char:
-                nameOfChar = 'colon'
-            elif ';' in char:
-                nameOfChar = 'semicolon'
-            elif '<' in char:
-                nameOfChar = 'less_than'
-            elif '=' in char:
-                nameOfChar = 'equal'
-            elif '>' in char:
-                nameOfChar = 'greater_than'
-            elif '?' in char:
-                nameOfChar = 'question_mark'
-            elif '@' in char:
-                nameOfChar = 'at'
-            elif '[' in char:
-                nameOfChar = 'opening_square_brackets'
-            elif '\\' in char:
-                nameOfChar = 'backslash'
-            elif ']' in char:
-                nameOfChar = 'closing_square_brackets'
-            elif '^' in char:
-                nameOfChar = 'caret'
-            elif '"' in char:
-                nameOfChar = 'quotation_marks'
-            elif '`' in char:
-                nameOfChar = 'prime'
-            elif '{' in char:
-                nameOfChar = 'opening_braces'
-            elif '|' in char:
-                nameOfChar = 'pipe'
-            elif '}' in char:
-                nameOfChar = 'closing_braces'
-            elif '~' in char:
-                nameOfChar = 'tilde'
-            else:
-                nameOfChar = char
+        if char in char_names.keys():
+            nameOfChar = char_names[char]
         elif char in string.ascii_letters + string.digits:
             nameOfChar = char
-        elif 'ä' in char:
-            nameOfChar = 'ae'
-        elif 'ö' in char:
-            nameOfChar = 'oe'
-        elif 'ü' in char:
-            nameOfChar = 'ue'
-        elif 'Ä' in char:
-            nameOfChar = 'AE'
-        elif 'Ö' in char:
-            nameOfChar = 'OE'
-        elif 'Ü' in char:
-            nameOfChar = 'UE'
-        elif ' ' in char:
-            nameOfChar = 'space'
         else:
             nameOfChar = None  # could not identify charakter
         return nameOfChar
@@ -324,7 +325,8 @@ class Type2NC(object):
         current_y = 10
 
         filler = ""
-        pgm_call_template = ';\nQ1603 = 10 ;Start X\nQ1604 = {0:d} ;Start Y\nQS1 = "{1:s}" || QS10\nCALL PGM {1:s}\n;'
+        pgm_call_template = ';\nQ1603 = 10 ;Start X\nQ1604 = {0:d} ;Start Y\n'
+        pgm_call_template += 'QS1 = "{1:s}" || QS10\nCALL PGM {1:s}\n;'
         for file_path in self.__nc_file_list:
             filler += pgm_call_template.format(current_y, file_path)
             current_y += 20
@@ -332,6 +334,7 @@ class Type2NC(object):
         output_fp = open(output_file_path, 'w')
         output_fp.write(demo_file_content.format(part_y_max, filler))
         output_fp.close()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -341,13 +344,11 @@ if __name__ == "__main__":
         "--input",
         metavar="font input file",
         nargs='+',
-        # type=argparse.FileType("r"),
         help="path and name of the font input file")
     parser.add_argument(
         "-o",
         "--out",
         metavar="output folder",
-        # type=string,
         help="path and name of the font input file")
     parser.add_argument(
         "-s",
@@ -356,7 +357,13 @@ if __name__ == "__main__":
         type=float,
         default=0.05,
         required=False,
-        help="Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting Splines")
+        help="step size: between 0.001 (very fine) and 0.2 (very coarse)")
+    parser.add_argument(
+        "-r",
+        "--remove_empty",
+        action='store_true',
+        default=False,
+        help="if set, output dose not contain lables for empty characters")
 
     args = parser.parse_args()
 
@@ -378,31 +385,34 @@ if __name__ == "__main__":
     char_list += Type2NC.MISC_TECH_CHARS
     char_list += Type2NC.MISC_SYMBOLS
     char_list += Type2NC.DINGBATS
-    char_list += Type2NC.CJK_UNIFIED_IDEOGRAPHS_PART1
-    char_list += Type2NC.CJK_UNIFIED_IDEOGRAPHS_PART2
-    char_list += Type2NC.CJK_UNIFIED_IDEOGRAPHS_PART3
-    char_list += Type2NC.CJK_UNIFIED_IDEOGRAPHS_PART4
+    char_list += Type2NC.CJK_UNIFIED_IDEOGRAPHS_PART
 
-    file_types = [('Font','*.ttf *.tte *.ttc *.otf *.dfont *.pfb')]
+    file_types = [('Font', '*.ttf *.tte *.ttc *.otf *.dfont *.pfb')]
 
     if args.input is None:
         root = tk.Tk()
         root.overrideredirect(1)
         root.withdraw()
 
-        font_file_list = tkinter.filedialog.askopenfilename(parent=root, title="Select Font file", filetypes=file_types,  multiple=1)
+        font_file_list = tkfd.askopenfilename(parent=root,
+                                              title="Select Font file",
+                                              filetypes=file_types,
+                                              multiple=1)
         if len(font_file_list) < 1:
             exit(-1)
 
-        output_folder = tkinter.filedialog.askdirectory(parent=root, title="Select destination folder")
+        output_folder = tkfd.askdirectory(parent=root,
+                                          title="Select destination folder")
         if len(output_folder) < 1:
             exit(-2)
 
-        step_size = tkinter.simpledialog.askfloat("Step Size",
-                                            "Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting Splines",
-                                            initialvalue=0.05,
-                                            minvalue=0.001,
-                                            maxvalue=0.2)
+        skip_empty = tkmb.askyesno("Skip empty", "Skip empty characters?")
+
+        step_size = tksd.askfloat("Step Size",
+                                  "Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting Splines",
+                                  initialvalue=0.05,
+                                  minvalue=0.001,
+                                  maxvalue=0.2)
         if step_size is None:
             exit(-3)
 
@@ -410,8 +420,12 @@ if __name__ == "__main__":
         font_file_list = args.input
         step_size = args.step_size
         output_folder = args.out
+        skip_empty = args.remove_empty
 
-    font_converter = Type2NC(step_size, char_list, os.path.abspath(output_folder))
+    font_converter = Type2NC(bezier_step_size=step_size,
+                             char_list=char_list,
+                             output_folder=os.path.abspath(output_folder),
+                             skip_empty=skip_empty)
 
     for font_file in font_file_list:
         font_converter.type2font(os.path.abspath(font_file))

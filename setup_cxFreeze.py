@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import setuptools
 import cx_Freeze
 import os
 
@@ -18,16 +17,16 @@ packages = ["idna", "os", "platform", "datetime", "string", "unicodedata",
             "tkinter", "argparse", "numpy", "scipy"]
 options = {
     'build_exe': {
-        'packages':packages,
+        'packages': packages,
     },
 }
 
 cx_Freeze.setup(
-    name = "type2nc",
+    name="type2nc",
     author="drunsinn",
     author_email="dr.unsinn@googlemail.com",
-    options = options,
-    version = "0.3.1",
-    description = "convert truetype fonts to klartext nc-code",
-    executables = executables
+    options=options,
+    version="0.3.2",
+    description="convert truetype fonts to klartext nc-code",
+    executables=executables
 )

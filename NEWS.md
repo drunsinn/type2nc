@@ -1,3 +1,8 @@
+# Release notes for 0.3.2
+
+  - code cleanup
+  - option to remove empty characters from output
+
 # Release notes for 0.3.1
 
   - assign all values from the command line
