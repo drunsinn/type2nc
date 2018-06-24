@@ -11,7 +11,7 @@
 ;Q1607 is start angle
 ;
 ;Local Q-Parameters for temporary use
-;QL10 is the counter for keeping track of the current charakter
+;QL10 is the counter for keeping track of the current character
 ;QL11 is the length of the input string QS1
 ;QL13 is the incremental value for the x advance
 ;QL14 is the incremental value for the y advance, currently not in use
@@ -21,11 +21,11 @@
 ;QL21 is a temp value for string comparison, STRCOMP
 ;QL22 temp value, contains the remaining lenght of the text-string
 ;QL23 temp value, contains the starting position of the unicode-pattern
-;QL24 temp value, contains the length of the test-string with special charakters, STRLEN
+;QL24 temp value, contains the length of the test-string with special characters, STRLEN
 ;QL25 temp value, contains the result of INSTR
-;QS2 is the current charakter
+;QS2 is the current character
 ;QS3 is a temporary string for holding special charkters for testing
-; a space charakter. this seems to be necesary because a string parameter cant be a single space
+; a space character. this seems to be necesary because a string parameter cant be a single space
 ;
 QL10 = 0 ;loop counter
 QL11 = STRLEN( SRC_QS1 ) ;string length
@@ -51,7 +51,7 @@ CYCL DEF 7.0 NULLPUNKT
 CYCL DEF 7.1 IX+QL13
 CYCL DEF 7.2 IY+QL14
 ;
-; check if charakter is a space
+; check if character is a space
 QS3 = "1 1" ;temp string for space charcter
 QS3 = SUBSTR( SRC_QS3 BEG1 LEN1 )
 QL21 = STRCOMP( SRC_QS3 SEA_QS2 )
@@ -63,7 +63,7 @@ LBL "not_space"
 ;
 ;
 ;Check if remaining string is long enough for unicode
-QS3 = "%0x" ;temp string for unicode charakter
+QS3 = "%0x" ;temp string for unicode character
 QL22 = QL11 - QL10
 FN 12: IF +QL22 LT +7 GOTO LBL "not_unicode"
 ;check if remaining string starts with unicode token
@@ -71,7 +71,7 @@ QL25 = INSTR( SRC_QS1 SEA_QS3 BEGQL10 )
 ;check if pattern starts at the beginning of the remaining string. if not, wait for later
 QL23 = QL25 - QL10
 FN 10: IF +QL23 NE +0 GOTO LBL "not_unicode"
-;extract pattern from string, ignoring the % charakter
+;extract pattern from string, ignoring the % character
 QL25 = QL25 + 1
 QS2 = SUBSTR( SRC_QS1 BEGQL25 LEN6 )
 ;advance counter to position after pattern
@@ -101,7 +101,7 @@ FN 12: IF +QL10 LT +QL11 GOTO LBL "start"
 CALL LBL "end"
 ;
 LBL "check_char"
-;not all charakters are allowed for label names. therfore they have to be translated manualy
+;not all characters are allowed for label names. therfore they have to be translated manualy
 QS3 = "!"
 QL21 = STRCOMP( SRC_QS3 SEA_QS2 )
 FN 10: IF +QL21 NE +0 GOTO LBL "not_exclamation_mark"
@@ -231,4 +231,4 @@ LBL "not_greater_than"
 LBL "check_cahr_end"
 LBL 0
 ;
-* - Beginn of charakter data
+* - Beginn of character data

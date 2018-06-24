@@ -1,4 +1,4 @@
-* - End of charakter data
+* - End of character data
 ;
 LBL "end"
 ;reset rotation

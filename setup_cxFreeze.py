@@ -26,7 +26,7 @@ cx_Freeze.setup(
     author="drunsinn",
     author_email="dr.unsinn@googlemail.com",
     options=options,
-    version="0.3.2",
+    version="0.3.3",
     description="convert truetype fonts to klartext nc-code",
     executables=executables
 )

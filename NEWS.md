@@ -1,5 +1,10 @@
 # Release notes for 0.3.2
 
+  - fixed error in path generation
+  - fixed spelling errors in comments and documentation
+
+# Release notes for 0.3.2
+
   - code cleanup
   - option to remove empty characters from output
 

@@ -53,8 +53,8 @@ installed. For Windows, follow the instructions on  [this github repo](https://g
 ## Program Usage
 
  - First, choose a font that has the necessary characters you
-   need. Not every font comes with all charakters defined by the
-   unicode standard. If a character is not available in your font,
+   need. Not every font comes with all characters defined by the
+   Unicode standard. If a character is not available in your font,
    it will be replaced with a placeholder. Some sources for fonts:
 
     - <https://fonts.google.com/>
@@ -72,7 +72,7 @@ installed. For Windows, follow the instructions on  [this github repo](https://g
 
   - create and select an output folder for the results
 
-  - enter a step size for the conversion. As the outline of a charakter
+  - enter a step size for the conversion. As the outline of a character
     consists of curves, these have to be broken down into smaller line
     segments. The smaller the selected step size, the smother the curves
     will be. A smaller step size can also increase the resulting file size
@@ -88,6 +88,33 @@ installed. For Windows, follow the instructions on  [this github repo](https://g
   - After it is finished, you will find a nc program for every font file
     you selected earlier. There will also be a demo program called
     `type2nc_demo.H` with a usage example.
+
+## Command line interface
+
+The program can also be used from the command line. To get information on the
+available options, run `python3 type2nc.py -h`
+Output:
+
+`usage: type2nc.py [-h] [-i font input file [font input file …]]
+                  [-o output folder] [-s step size] [-r]
+
+
+Create Klartext NC code from font files
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i font input file [font input file …], --input font input file [font input file …]
+                        path of one or more font files
+  -o output folder, --out output folder
+                        path to the output folder. If not set, use current
+                        directory.
+  -s step size, --step_size step size
+                        step size: between 0.001 (very fine) and 0.2 (very
+                        coarse)
+  -r, --remove_empty    if set, output dose not contain label for empty
+                        characters`
+
+
 
 ## NC-Code Usage
 
@@ -119,8 +146,8 @@ ending in `RuntimeError: Freetype library not found`. To fix this, follow
 the instructions on [this github repo](https://github.com/ubawurinna/freetype-windows-binaries).
 
 ### Characters are not included in nc code
-To reduce the filesize of the output file, it was chosen to limit the
-range of characters to specific sections of the unicode standard:
+To reduce the file size of the output file, it was chosen to limit the
+range of characters to specific sections of the Unicode standard:
 
 * BASIC_LATIN: 0x0020 to 0x007E
 * C1_CTRL_AND_LATIN1_SUPPLEMENT: 0x0080 to 0x00FF

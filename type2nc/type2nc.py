@@ -48,9 +48,9 @@ class Type2NC(object):
         self.__bezier_step_size = bezier_step_size
         self.__char_list = char_list
         self.__output_folder = output_folder
-        self.__charsize_pt = size_pt
-        self.__charsize_dpi = size_dpi
-        self.__chartarget_height = target_height
+        self.__char_size_pt = size_pt
+        self.__char_size_dpi = size_dpi
+        self.__char_target_height = target_height
         self.__skip_empty = skip_empty
         self.__nc_file_list = list()
 
@@ -63,33 +63,41 @@ class Type2NC(object):
         if self.__skip_empty:
             print("skipping empty characters")
 
-        face.set_char_size(height=self.__charsize_pt * self.__charsize_dpi)
+        face.set_char_size(height=self.__char_size_pt * self.__char_size_dpi)
 
         char_lines = []
         char_data_collection = list()
         empty_char_list = list()
         x_max = 0
+        # x_max_for_x_min = 0
+        # x_min = 0
+        # x_min_for_x_max = 0
 
         for char in self.__char_list:
-            if self.__skip_empty and face.get_char_index(char) == 0:
+            if self.__skip_empty and face.get_char_index(char) == 0 and not char is u"\u0020":
                 empty_char_list.append(char)
             else:
                 char_data = dict()
                 char_data['plain'] = str(char)
                 char_data['ord'] = ord(chr(char))
                 char_data['paths'], char_data[
-                    'info'] = self.get_paths_of_char(face, char)
-                char_data['text'] = self.get_char_name(char)
-
+                    'info'] = self._get_paths_of_char(face, char)
+                char_data['text'] = self._get_char_name(char)
                 char_data_collection.append(char_data)
-                # find the highest charakter to calculate the scale factor
+                # find the highest character to calculate the scale factor
                 if char_data['info']['x_max'] > x_max:
                     x_max = char_data['info']['x_max']
+                #     x_min_for_x_max = char_data['info']['x_min']
+                # if char_data['info']['x_min'] < x_min:
+                #     x_min = char_data['info']['x_min']
+                #     x_max_for_x_min = char_data['info']['x_max']
 
-        scale_factor = self.__chartarget_height / x_max
+        scale_factor = self.__char_target_height / x_max
+        # print("x_max ", x_max, " with x_min ", x_min_for_x_max)
+        # print("x_min ", x_min, " with x_max ", x_max_for_x_min)
 
         for char_data in char_data_collection:
-            char_lines.extend(self.create_char_lable(char_data, scale_factor))
+            char_lines.extend(self._create_char_label(char_data, scale_factor))
 
         nc_file_name = os.path.basename(font_file_path).split('.')[0] + '.H'
         nc_file_name = nc_file_name.replace(' ', '_')
@@ -105,7 +113,7 @@ class Type2NC(object):
             face.style_name.decode("utf-8")))
         output_lines.append('; Generated: {:%Y-%m-%d %H:%M:%S}'.format(
                          datetime.datetime.today()))
-        output_lines.append('; Number of Charakters: {0:d}'.format(
+        output_lines.append('; Number of characters: {0:d}'.format(
                          len(self.__char_list)))
         output_lines.append(';')
 
@@ -139,7 +147,7 @@ class Type2NC(object):
         print("lines: {0:d}, file size: {1:d} bytes".format(len(output_lines),
                                                             file_size))
 
-    def create_char_lable(self, char_data, scale_factor):
+    def _create_char_label(self, char_data, scale_factor):
         """Generate klartext code for character
 
         Keyword arguments:
@@ -147,13 +155,13 @@ class Type2NC(object):
         scale_factor -- factor for scaling the x and y values
         """
         char_lines = list()
+        plain_char_name = char_data['plain']
         if char_data['text'] is not None:
             char_lines.append('* -   {0:s}'.format(char_data['text']))
             char_lines.append('LBL "{0:s}"'.format(char_data['text']))
-        else:
-            char_lines.append('* -   Unicode Hex:0x{0:04x}: {1:s}'.format(
-                char_data['ord'], char_data['plain']))
-            char_lines.append('LBL "0x{0:04x}"'.format(char_data['ord']))
+        char_lines.append('* -   Unicode Hex:0x{0:04x} : {1:s}'.format(
+            char_data['ord'], char_data['plain']))
+        char_lines.append('LBL "0x{0:04x}"'.format(char_data['ord']))
 
         for path in char_data['paths']:
             char_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FMAX'.format(
@@ -168,8 +176,8 @@ class Type2NC(object):
                 char_lines.append('L  X{0:+0.4f}  Y{1:+0.4f}'.format(
                     path[0][0] * scale_factor,
                     path[0][1] * scale_factor))
+            char_lines.append('L  Z+Q1602')
 
-        char_lines.append('L  Z+Q1602')
         if char_data['text'] is not None:
             char_lines.append('LBL "{0:s}_X-Advance"'.format(char_data['text']))
         char_lines.append('LBL "0x{0:04x}_X-Advance"'.format(char_data['ord']))
@@ -179,7 +187,7 @@ class Type2NC(object):
         char_lines.append(';')
         return char_lines
 
-    def point_on_curve(self, point_list, distance_factor):
+    def _point_on_curve(self, point_list, distance_factor):
         """Get x and y coordinate for point along a bezier curve relative to
         the lenght of the curve.
 
@@ -199,7 +207,7 @@ class Type2NC(object):
             c_t_y += b_i_n * point[1]
         return c_t_x, c_t_y
 
-    def get_paths_of_char(self, font_face, char):
+    def _get_paths_of_char(self, font_face, char):
         """Get list of x and y coordinates the outline of a character. Also
         returns information about the charkter.
 
@@ -215,6 +223,7 @@ class Type2NC(object):
 
         if len(slot.outline.points) < 1:
             char_info['x_max'] = 0
+            # char_info['x_min'] = 0
             char_info['x_advance'] = slot.advance.x
             char_info['y_advance'] = slot.advance.y
         else:
@@ -223,6 +232,7 @@ class Type2NC(object):
             x = points['x']
             start, end = 0, 0
             char_info['x_max'] = x.max()
+            # char_info['x_min'] = x.min()
             char_info['x_advance'] = slot.advance.x
             char_info['y_advance'] = slot.advance.y
 
@@ -260,20 +270,20 @@ class Type2NC(object):
                                 1.0 / self.__bezier_step_size,
                                 endpoint=True):
                             path_points.append(
-                                self.point_on_curve(segment, t))
+                                self._point_on_curve(segment, t))
 
                 paths.append(path_points)
                 start = end + 1
 
         return paths, char_info
 
-    def get_char_name(self, char):
-        """Get name of character for lable call.
+    def _get_char_name(self, char):
+        """Get name of character for label call.
 
         Keyword arguments:
         char -- character
         """
-        char_names = {
+        label_map = {
             '!': 'exclamation_mark',
             '\'': 'apostrophe',
             '(': 'opening_parenthese',
@@ -304,16 +314,18 @@ class Type2NC(object):
             'Ä': 'AE',
             'Ö': 'OE',
             'Ü': 'UE',
-            ' ': 'space',
+            ' ': 'space'
         }
+
         char = chr(char)
-        if char in char_names.keys():
-            nameOfChar = char_names[char]
-        elif char in string.ascii_letters + string.digits:
-            nameOfChar = char
+
+        if char in label_map.keys():
+            label_name = label_map[char]
+        elif char in string.ascii_letters + string.digits + string.punctuation:
+            label_name = char
         else:
-            nameOfChar = None  # could not identify charakter
-        return nameOfChar
+            label_name = None  # could not identify character
+        return label_name
 
     def generate_demo_file(self):
         output_file_path = os.path.join(self.__output_folder, "type2nc_demo.H")
@@ -325,7 +337,7 @@ class Type2NC(object):
         current_y = 10
 
         filler = ""
-        pgm_call_template = ';\nQ1603 = 10 ;Start X\nQ1604 = {0:d} ;Start Y\n'
+        pgm_call_template = ';\nQ1603 = 10 ;start X\nQ1604 = {0:d} ;start Y\n'
         pgm_call_template += 'QS1 = "{1:s}" || QS10\nCALL PGM {1:s}\n;'
         for file_path in self.__nc_file_list:
             filler += pgm_call_template.format(current_y, file_path)
@@ -344,12 +356,13 @@ if __name__ == "__main__":
         "--input",
         metavar="font input file",
         nargs='+',
-        help="path and name of the font input file")
+        help="path of one or more font files")
     parser.add_argument(
         "-o",
         "--out",
         metavar="output folder",
-        help="path and name of the font input file")
+        required=False,
+        help="path to the output folder. If not set, use current directory.")
     parser.add_argument(
         "-s",
         "--step_size",
@@ -363,7 +376,7 @@ if __name__ == "__main__":
         "--remove_empty",
         action='store_true',
         default=False,
-        help="if set, output dose not contain lables for empty characters")
+        help="if set, output dose not contain labels for empty characters")
 
     args = parser.parse_args()
 
@@ -419,7 +432,10 @@ if __name__ == "__main__":
     else:
         font_file_list = args.input
         step_size = args.step_size
-        output_folder = args.out
+        if args.out is None:
+            output_folder = os.getcwd()
+        else:
+            output_folder = args.out
         skip_empty = args.remove_empty
 
     font_converter = Type2NC(bezier_step_size=step_size,
