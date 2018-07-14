@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="type2nc",
-    version="0.3.3",
+    version="0.4.0",
     author="drunsinn",
     author_email="dr.unsinn@googlemail.com",
     description="convert truetype fonts to klartext nc-code",
