@@ -1,6 +1,6 @@
 # Release notes for 0.4.0
 
-  - added option to remove empty characters completly or reduce the file size
+  - added option to remove empty characters completely or reduce the file size
     by only adding them as labels
 
 # Release notes for 0.3.2
