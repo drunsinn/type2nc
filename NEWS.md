@@ -1,3 +1,7 @@
+# Release notes for 0.4.1
+
+  - update to freetype-py version 2.0 - freetype.dll included
+
 # Release notes for 0.4.0
 
   - added option to remove empty characters completely or reduce the file size

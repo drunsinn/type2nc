@@ -14,7 +14,7 @@ base = None
 executables = [cx_Freeze.Executable("type2nc/type2nc.py", base=base)]
 
 packages = ["idna", "os", "platform", "datetime", "string", "unicodedata",
-            "tkinter", "argparse", "numpy", "scipy"]
+            "tkinter", "argparse", "numpy", "scipy", "freetype"]
 options = {
     'build_exe': {
         'packages': packages,
@@ -26,7 +26,7 @@ cx_Freeze.setup(
     author="drunsinn",
     author_email="dr.unsinn@googlemail.com",
     options=options,
-    version="0.4.0",
+    version="0.4.1",
     description="convert truetype fonts to klartext nc-code",
     executables=executables
 )

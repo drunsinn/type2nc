@@ -8,7 +8,6 @@ import os
 import platform
 import datetime
 import string
-# import unicodedata
 import tkinter as tk
 import tkinter.filedialog as tkfd
 import tkinter.simpledialog as tksd
@@ -16,10 +15,6 @@ import tkinter.messagebox as tkmb
 import argparse
 import numpy as np
 from scipy.special import binom
-
-if platform.system() == 'Windows' and os.path.isdir('./lib/'):
-    os.environ["PATH"] += os.pathsep + './lib/'
-
 import freetype as ft
 
 
