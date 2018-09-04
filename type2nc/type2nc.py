@@ -129,8 +129,7 @@ class Type2NC(object):
         output_fp.close()
 
         file_size = os.path.getsize(output_file_path)
-        if self.__output_mode is Type2NC.MODE_REDUCE or\
-          self.__output_mode is Type2NC.MODE_REMOVE:
+        if self.__output_mode is Type2NC.MODE_REDUCE or self.__output_mode is Type2NC.MODE_REMOVE:
             print("{0:d} of {1:d} selected characters were found empty".format(
                 len(empty_char_list),
                 len(self.__char_list)))
@@ -280,10 +279,11 @@ class Type2NC(object):
                     if len(segment) == 2:  # straight segment
                         path_points.append(segment[-1])
                     else:
+                        num_points = int(1.0 / self.__bezier_step_size)
                         for t in np.linspace(
                                 0.0,
                                 1.0,
-                                1.0 / self.__bezier_step_size,
+                                num_points,
                                 endpoint=True):
                             path_points.append(
                                 self._point_on_curve(segment, t))

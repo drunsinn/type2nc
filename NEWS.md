@@ -1,3 +1,6 @@
+# Release notes for 0.4.2
+
+  - fixed Warning on implicit conversion of float to integer
 # Release notes for 0.4.1
 
   - update to freetype-py version 2.0 - freetype.dll included
