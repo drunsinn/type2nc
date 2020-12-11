@@ -9,6 +9,7 @@
 ;Q1605 is the feed rate
 ;Q1606 is the aproximate height of the text
 ;Q1607 is start angle
+;Q1608 is the plunging feed rate
 ;
 ;Local Q-Parameters for temporary use
 ;QL10 is the counter for keeping track of the current character

@@ -68,7 +68,7 @@ class Type2NC(object):
         x_max = 0
 
         for char in self.__char_list:
-            if face.get_char_index(char) == 0 and char is not u"\u0020" and self.__output_mode is not Type2NC.MODE_ALL:
+            if face.get_char_index(char) == 0 and char != u"\u0020" and self.__output_mode is not Type2NC.MODE_ALL:
                 empty_char_list.append(char)
             else:
                 char_data = dict()
@@ -189,16 +189,16 @@ class Type2NC(object):
             path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FMAX'.format(
                 path[0][0] * scale_factor,
                 path[0][1] * scale_factor))
-            path_lines.append('L  Z+QL15')
+            path_lines.append('L  Z+QL15 FQ1608')
             for point in path[1:]:
-                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f}'.format(
+                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FQ1605'.format(
                     point[0] * scale_factor, point[1] * scale_factor))
             if not (path[0][0] == point[0] and
                     path[0][1] == point[1]):
-                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f}'.format(
+                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FQ1605'.format(
                     path[0][0] * scale_factor,
                     path[0][1] * scale_factor))
-            path_lines.append('L  Z+Q1602')
+            path_lines.append('L  Z+Q1602 FQ1608')
 
         return path_lines
 
