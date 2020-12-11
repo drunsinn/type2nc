@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="type2nc",
-    version="0.4.2",
+    version="0.5.0",
     author="drunsinn et al.",
     author_email="dr.unsinn@googlemail.com",
     description="convert truetype fonts to klartext nc-code",
@@ -16,7 +16,8 @@ setuptools.setup(
     url="https://github.com/drunsinn/type2nc",
     packages=setuptools.find_packages(exclude=['tests',
                                                'tests.*']),
-    package_data={'': ['demo_pgm_template.H',
+    package_data={'': ['demo_pgm_template_cycle.H',
+                       'demo_pgm_template_conventional.H',
                        'pgm_foot_template.H',
                        'pgm_head_template.H']},
     # include_package_data=True,

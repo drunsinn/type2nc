@@ -9,6 +9,12 @@ the engraving cycle 225 with QS-parameters.
 
 ![Path details](/screenshots/screen_3.png?raw=true "Path details")
 
+## Contributors
+drunsinn, TobFleischi and Klartext
+
+### Forum
+German: [Industry Arena](https://de.industryarena.com/heidenhain/forum/gravieren-von-text-in-anderen-sprachen-ohne-cam--83908.html)
+
 ## Requirements
 To use the resulting Klartext code on a control, it has to have the following
 cycles and functions:
@@ -22,6 +28,12 @@ cycles and functions:
   - FN 9
   - FN 10
   - FN 12
+  - FN 18 ID210 NR2
+  - FN 18 ID220 NR2 IDX1 and 2
+  - FN 18 ID270 NR2 IDX1 and 2
+
+For ease of use it is possible to use cycle 225 for parameter definition. If the
+control has cycle 225 you can add use command line option `--use_cycle_def`.
 
 Testing was done on a machine with TNC 620 with software version 817600-03. As
 long as the requirements listed above are met, it should work fine.
@@ -43,7 +55,7 @@ installed on your system:
 To install type2nc and its dependencies from the Python Packaging Index,
 first install python3. After a successful setup, type
 
-`pip install type2nc`
+`pip3 install type2nc`
 
 on the command line.
 To get freetype up and running, you might have to install the binary's
@@ -118,25 +130,23 @@ optional arguments:
 
 ## NC-Code Usage
 
-The nc program uses these Q parameters:
+The nc program uses the Q parameters also used by cycle 225:
 
-  - **QS1**: Text to engrave
-  - **Q1600**: Z-coordinate of surface
-  - **Q1601**: milling depth
-  - **Q1602**: safe distance for rapid feed between characters
-  - **Q1603**: X-coordinate of the lower left corner of the text
-  - **Q1604**: Y-coordinate of the lower left corner of the text
-  - **Q1605**: milling feed
-  - **Q1606**: approximate height of the engraved text
-  - **Q1607**: angle of the text base line
+  - **QS500**: Text to engrave
+  - **Q203**: Z-coordinate of surface
+  - **201**: milling depth
+  - **Q200**: safe distance for rapid feed between characters
+  - **Q206**: plunging feed rate
+  - **Q207**: milling feed rate
+  - **Q513**: approximate height of the engraved text
+  - **Q374**: angle of the text base line
 
 Internally the nc program uses the following parameters:
 
-  - **QL10** to **QL25**: local Q-parameter for internal calculations
-  - **QS2** and **QS3**: String-Parameter used as temporary storage
+  - **QL10** to **QL32**: local Q-parameter for internal calculations
+  - **QS1** and **QS3**: String-Parameter used as temporary storage
 
-After setting the Q parameters QS1 as well as Q1600 to Q1607, make a
-PGM CALL to the generated .H-file with the code for the selected font.
+After setting the Q parameters, make a PGM CALL to the generated .H-file with the code for the selected font.
 
 ## Known Issues / Problems
 ### Missing Freetype library

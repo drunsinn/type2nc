@@ -1,6 +1,12 @@
-# Release notes for 0.4.2
+# Reselase notes for 0.5.0
+  - address comments from users Klartext and TobFleischi at https://de.industryarena.com/heidenhain/forum/gravieren-von-text-in-anderen-sprachen-ohne-cam--83908.html . These changes break compatibility for previous versions
+    - add parameter for plunging feed rate
+    - use active offset and add incremental changes
+    - add command line parameter to generate demo file with cycle 225 for definition of parameters
 
+# Release notes for 0.4.2
   - fixed Warning on implicit conversion of float to integer
+
 # Release notes for 0.4.1
 
   - update to freetype-py version 2.0 - freetype.dll included
