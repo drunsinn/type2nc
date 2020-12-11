@@ -3,7 +3,7 @@
 ;QS500 is the text
 ;Q200 is the sage distance
 ;Q203 is the Z-coordinate of the surface
-;Q201 is the debt
+;Q201 is the depth
 ;Q204 is the safe Z-coordinate for traversing between cuts
 ;Q206 is the plunging feed rate
 ;Q207 is the feed rate while miling
@@ -78,12 +78,12 @@ CYCL DEF 7.1 IX+QL13
 CYCL DEF 7.2 IY+QL14
 ;
 ; check if character is a space
-QS3 = "1 1" ;temp string for space charcter
+QS3 = "1 1" ;temp string for space character
 QS3 = SUBSTR( SRC_QS3 BEG1 LEN1 )
 QL21 = STRCOMP( SRC_QS3 SEA_QS2 )
 FN 10: IF +QL21 NE +0 GOTO LBL "not_space"
-QS2 = "space" ;space charcter
-FN 9: IF +10 EQU +10 GOTO LBL "cont" ;skipp to lbl call
+QS2 = "space" ;space character
+FN 9: IF +10 EQU +10 GOTO LBL "cont" ;skip to lbl call
 ;
 LBL "not_space"
 ;
@@ -101,7 +101,7 @@ QL25 = QL25 + 1
 QS2 = SUBSTR( SRC_QS1 BEGQL25 LEN6 )
 ;advance counter to position after pattern
 QL10 = QL10 + 6
-FN 9: IF +10 EQU +10 GOTO LBL "cont" ;skipp to lbl call
+FN 9: IF +10 EQU +10 GOTO LBL "cont" ;skip to lbl call
 ;
 LBL "not_unicode"
 ;
@@ -109,9 +109,9 @@ LBL "not_unicode"
 QS3 = ";'\/.,][`!@#$%^&*()_+:?><"
 QL24 = STRLEN( SRC_QS3 )
 QL25 = INSTR( SRC_QS3 SEA_QS2 BEG0 )
-FN 9: IF +QL25 EQU +QL24 GOTO LBL "not_illegal" ;skipp to lbl call
+FN 9: IF +QL25 EQU +QL24 GOTO LBL "not_illegal" ;skip to lbl call
 CALL LBL "check_char"
-FN 9: IF +10 EQU +10 GOTO LBL "cont" ;skipp to lbl call
+FN 9: IF +10 EQU +10 GOTO LBL "cont" ;skip to lbl call
 ;
 LBL "not_illegal"
 ;
@@ -126,7 +126,7 @@ FN 12: IF +QL10 LT +QL11 GOTO LBL "start"
 CALL LBL "end"
 ;
 LBL "check_char"
-;not all characters are allowed for label names. therfore they have to be translated manualy
+;not all characters are allowed for label names. therefore they have to be translated manually
 QS3 = "!"
 QL21 = STRCOMP( SRC_QS3 SEA_QS2 )
 FN 10: IF +QL21 NE +0 GOTO LBL "not_exclamation_mark"
@@ -256,4 +256,4 @@ LBL "not_greater_than"
 LBL "check_cahr_end"
 LBL 0
 ;
-* - Beginn of character data
+* - begin of character data

@@ -204,7 +204,7 @@ class Type2NC(object):
 
     def _point_on_curve(self, point_list, distance_factor):
         """Get x and y coordinate for point along a bezier curve relative to
-        the lenght of the curve.
+        the length of the curve.
 
         Keyword arguments:
         point_list -- points defining the bezier curve
@@ -267,7 +267,7 @@ class Type2NC(object):
                 path_points = []
                 path_points.append(points[0])
 
-                # split the list of all the points in seperate parts
+                # split the list of all the points in separate parts
                 # with the right amount for each contour type
                 for j in range(1, len(points)):
                     # skipp first point as it is already in the list
@@ -397,7 +397,7 @@ if __name__ == "__main__":
         "--remove_empty",
         action='store_true',
         default=False,
-        help="if set, output wont contain lables for empty chars. overrides -c")
+        help="if set, output won't contain labels for empty chars. overrides -c")
     parser.add_argument(
         "-c",
         "--reduce_empty",
@@ -409,7 +409,7 @@ if __name__ == "__main__":
         "--use_cycle_def",
         action='store_true',
         default=False,
-        help="if set, demo output will use cycle 225 for definiton of parametes")
+        help="if set, demo output will use cycle 225 for definition of parameters")
 
     args = parser.parse_args()
 

@@ -17,7 +17,7 @@ Q1600 = 0 ;surface in Z
 Q1601 = - 0.5 ;depth
 Q1602 = 5 ;safe height
 Q1605 = 6000 ;feedrate
-Q1606 = 10 ;aprox. font hight
+Q1606 = 10 ;aprox. font height
 Q1607 = 5 ;angle
 ;
 CYCL DEF 225 GRAVIEREN ~
