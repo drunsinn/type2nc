@@ -78,7 +78,7 @@ installed. For Windows, follow the instructions on  [this github repo](https://g
   - Make sure you have the necessary rights to use the font.
 
   - Open a command prompt and run python3 type2nc.py or double-click the
-    `type2n.py` file
+    `type2nc.py` file
 
   - Select one or more font files
 
@@ -107,24 +107,22 @@ The program can also be used from the command line. To get information on the
 available options, run `python3 type2nc.py -h`
 Output:
 
-`usage: type2nc.py [-h] [-i font input file [font input file …]]
-                  [-o output folder] [-s step size] [-r]
-
+`usage: type2nc.py [-h] [-i font input file [font input file ...]] [-o output folder]
+                  [-s step size] [-r] [-c] [-z]
 
 Create Klartext NC code from font files
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i font input file [font input file …], --input font input file [font input file …]
+  -i font input file [font input file ...], --input font input file [font input file ...]
                         path of one or more font files
   -o output folder, --out output folder
-                        path to the output folder. If not set, use current
-                        directory.
+                        path to the output folder. If not set, use current directory.
   -s step size, --step_size step size
-                        step size: between 0.001 (very fine) and 0.2 (very
-                        coarse)
-  -r, --remove_empty    if set, output dose not contain label for empty
-                        characters`
+                        step size: between 0.001 (very fine) and 0.2 (very coarse)
+  -r, --remove_empty    if set, output won't contain labels for empty chars. overrides -c
+  -c, --reduce_empty    if set, output will contain labels for empty characters but no actual data
+  -z, --use_cycle_def   if set, demo output will use cycle 225 for definition of parameters`
 
 
 
