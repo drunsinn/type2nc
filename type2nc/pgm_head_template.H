@@ -1,15 +1,14 @@
 ;
 ;Usage: set the following Q-Parameters to the desired values
-;QS1 is the text
-;Q1600 is the Z-coordinate of the sourface
-;Q1601 is the debth
-;Q1602 is the safe Z-coordinate for traversing between cuts
-;Q1603 is the X-coordinate of the lower left corner of the text
-;Q1604 is the Y-coordinate of the lower left corner of the text
-;Q1605 is the feed rate
-;Q1606 is the aproximate height of the text
-;Q1607 is start angle
-;Q1608 is the plunging feed rate
+;QS500 is the text
+;Q200 is the sage distance
+;Q203 is the Z-coordinate of the surface
+;Q201 is the debt
+;Q204 is the safe Z-coordinate for traversing between cuts
+;Q206 is the plunging feed rate
+;Q207 is the feed rate while miling
+;Q513 is the approximate height of the text
+;Q374 is start angle
 ;
 ;Local Q-Parameters for temporary use
 ;QL10 is the counter for keeping track of the current character
@@ -18,33 +17,59 @@
 ;QL14 is the incremental value for the y advance, currently not in use
 ;QL15 is the end value for the z movement
 ;QL16 is the scale factor for x and y
-;QL20 is the width of the caharckter plus the necessary advance. only valid after the cahrackter was machined
+;QL20 is the width of the character plus the necessary advance. only valid after the character was machined
 ;QL21 is a temp value for string comparison, STRCOMP
-;QL22 temp value, contains the remaining lenght of the text-string
+;QL22 temp value, contains the remaining length of the text-string
 ;QL23 temp value, contains the starting position of the unicode-pattern
 ;QL24 temp value, contains the length of the test-string with special characters, STRLEN
 ;QL25 temp value, contains the result of INSTR
+;QL26 is the X-coordinate of the lower left corner of the text, and the start position
+;QL27 is the Y-coordinate of the lower left corner of the text, and the start position
+;QL28 is the active X-coordinate NPV
+;QL29 is the active Y-coordinate NPV
+;QL30 is the active rotation
+;QL31 is the newly calculated rotation
+;QL32 calculated safe height for first positioning
+;QS1 is the transported value from QS500
 ;QS2 is the current character
-;QS3 is a temporary string for holding special charkters for testing
-; a space character. this seems to be necesary because a string parameter cant be a single space
+;QS3 is a temporary string for holding special characters for testing
+; a space character. this seems to be necessary because a string parameter cant be a single space
+;
+QS1 = QS500 ; give value from QS500 to QS1
+; read the active NPV
+FN 18: SYSREAD QL28 = ID220 NR2 IDX1
+FN 18: SYSREAD QL29 = ID220 NR2 IDX2
+;
+; read the active position in X and Y
+FN 18: SYSREAD QL26 = ID270 NR1 IDX1
+FN 18: SYSREAD QL27 = ID270 NR1 IDX2
+;
+; read active rotation
+FN 18: SYSREAD QL30 = ID210 NR2
 ;
 QL10 = 0 ;loop counter
 QL11 = STRLEN( SRC_QS1 ) ;string length
 QL13 = 0 ;start in X
 QL14 = 0 ;start in Y
-QL15 = Q1600 + Q1601 ;final Z coordinate
+QL15 = Q201 + Q203 ;final Z coordinate
 ;
-QL16 = Q1606 / 10
+QL16 = Q513 / 10
 ;
 CYCL DEF 7.0 NULLPUNKT
-CYCL DEF 7.1  IX+Q1603
-CYCL DEF 7.2  IY+Q1604
+CYCL DEF 7.1  X+QL26
+CYCL DEF 7.2  Y+QL27
 ;
+; calculate new rotation
+QL31 = Q374 + QL30
 CYCL DEF 10.0 DREHUNG
-CYCL DEF 10.1  ROT+Q1607
+CYCL DEF 10.1  ROT+QL31
 ;
 CYCL DEF 26.0 MASSFAKTOR ACHSSPEZ.
-CYCL DEF 26.1 XQL16 YQL16
+CYCL DEF 26.1 X+QL16 Y+QL16
+;
+; calculate new safe height for first positioning
+QL32 = Q200 + Q203
+L Z+QL32 FMAX
 ;
 LBL "start"
 QS2 = SUBSTR( SRC_QS1 BEGQL10 LEN1 )
@@ -61,7 +86,6 @@ QS2 = "space" ;space charcter
 FN 9: IF +10 EQU +10 GOTO LBL "cont" ;skipp to lbl call
 ;
 LBL "not_space"
-;
 ;
 ;Check if remaining string is long enough for unicode
 QS3 = "%0x" ;temp string for unicode character
@@ -92,7 +116,7 @@ FN 9: IF +10 EQU +10 GOTO LBL "cont" ;skipp to lbl call
 LBL "not_illegal"
 ;
 LBL "cont"
-L FQ1605
+L FQ207
 CALL LBL QS2
 ;
 QL10 = QL10 + 1 ;advance counter

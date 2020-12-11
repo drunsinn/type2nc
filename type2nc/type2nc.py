@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-@author: drunsinn
+@author: drunsinn, TobFleischi, Klartext
 '''
 
 import os
@@ -189,16 +189,16 @@ class Type2NC(object):
             path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FMAX'.format(
                 path[0][0] * scale_factor,
                 path[0][1] * scale_factor))
-            path_lines.append('L  Z+QL15 FQ1608')
+            path_lines.append('L  Z+QL15 F+Q206')
             for point in path[1:]:
-                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FQ1605'.format(
+                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} F+Q207'.format(
                     point[0] * scale_factor, point[1] * scale_factor))
             if not (path[0][0] == point[0] and
                     path[0][1] == point[1]):
-                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FQ1605'.format(
+                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} F+Q207'.format(
                     path[0][0] * scale_factor,
                     path[0][1] * scale_factor))
-            path_lines.append('L  Z+Q1602 FQ1608')
+            path_lines.append('L  Z+Q204 F AUTO')
 
         return path_lines
 
@@ -343,18 +343,23 @@ class Type2NC(object):
             label_name = None  # could not identify character
         return label_name
 
-    def generate_demo_file(self):
+    def generate_demo_file(self, use_cycle_def=False):
         output_file_path = os.path.join(self.__output_folder, "type2nc_demo.H")
 
-        with open('demo_pgm_template.H', 'r') as templateFile:
+        if use_cycle_def:
+            demo_template = 'demo_pgm_template_cycle.H'
+        else: 
+            demo_template = 'demo_pgm_template_conventional.H'
+
+        with open(demo_template, 'r') as templateFile:
             demo_file_content = templateFile.read()
 
         part_y_max = 10 + len(self.__nc_file_list) * 20 + 10
         current_y = 10
 
         filler = ""
-        pgm_call_template = ';\nQ1603 = 10 ;start X\nQ1604 = {0:d} ;start Y\n'
-        pgm_call_template += 'QS1 = "{1:s}" || QS10\nCALL PGM {1:s}\n;'
+        pgm_call_template = 'L X+5 Y+5 Z+100 R0 FMAX\n'
+        pgm_call_template += 'CALL PGM {1:s}\n;'
         for file_path in self.__nc_file_list:
             filler += pgm_call_template.format(current_y, file_path)
             current_y += 20
@@ -399,6 +404,12 @@ if __name__ == "__main__":
         action='store_true',
         default=False,
         help="if set, output will contain labels for empty characters but no actual data")
+    parser.add_argument(
+        "-z",
+        "--use_cycle_def",
+        action='store_true',
+        default=False,
+        help="if set, demo output will use cycle 225 for definiton of parametes")
 
     args = parser.parse_args()
 
@@ -479,4 +490,4 @@ if __name__ == "__main__":
     for font_file in font_file_list:
         font_converter.type2font(os.path.abspath(font_file))
 
-    font_converter.generate_demo_file()
+    font_converter.generate_demo_file(args.use_cycle_def)
