@@ -271,7 +271,7 @@ class Type2NC(object):
                 # split the list of all the points in separate parts
                 # with the right amount for each contour type
                 for j in range(1, len(points)):
-                    # skipp first point as it is already in the list
+                    # skip first point as it is already in the list
                     segments[-1].append(points[j])
                     if tags[j] & (1 << 0) and j < (len(points) - 1):
                         segments.append([points[j], ])
