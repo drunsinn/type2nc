@@ -33,7 +33,7 @@
 ;QS1 is the transported value from QS500
 ;QS2 is the current character
 ;QS3 is a temporary string for holding special characters for testing
-; a space character. this seems to be necessary because a string parameter cant be a single space
+; a space character. this seems to be necessary because a string parameter can't be a single space
 ;
 QS1 = QS500 ; give value from QS500 to QS1
 ; read the active NPV

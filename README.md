@@ -30,7 +30,7 @@ cycles and functions:
   - FN 12
   - FN 18 ID210 NR2
   - FN 18 ID220 NR2 IDX1 and 2
-  - FN 18 ID270 NR2 IDX1 and 2
+  - FN 18 ID270 NR1 IDX1 and 2
 
 For ease of use it is possible to use cycle 225 for parameter definition. If the
 control has cycle 225 you can add use command line option `--use_cycle_def`.
@@ -124,15 +124,13 @@ optional arguments:
   -c, --reduce_empty    if set, output will contain labels for empty characters but no actual data
   -z, --use_cycle_def   if set, demo output will use cycle 225 for definition of parameters`
 
-
-
 ## NC-Code Usage
 
 The nc program uses the Q parameters also used by cycle 225:
 
   - **QS500**: Text to engrave
   - **Q203**: Z-coordinate of surface
-  - **201**: milling depth
+  - **Q201**: milling depth
   - **Q200**: safe distance for rapid feed between characters
   - **Q206**: plunging feed rate
   - **Q207**: milling feed rate
@@ -153,7 +151,7 @@ installed automatically. When trying to run type2nc, you get an error message
 ending in `RuntimeError: Freetype library not found`. To fix this, follow
 the instructions on [this github repo](https://github.com/ubawurinna/freetype-windows-binaries).
 
-### Characters are not included in nc code
+### Characters not availibel
 To reduce the file size of the output file, it was chosen to limit the
 range of characters to specific sections of the Unicode standard:
 
