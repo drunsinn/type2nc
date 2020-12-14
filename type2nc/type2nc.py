@@ -8,10 +8,6 @@ import os
 import platform
 import datetime
 import string
-import tkinter as tk
-import tkinter.filedialog as tkfd
-import tkinter.simpledialog as tksd
-import tkinter.messagebox as tkmb
 import argparse
 import numpy as np
 from scipy.special import binom
@@ -437,6 +433,10 @@ if __name__ == "__main__":
     file_types = [('Font', '*.ttf *.tte *.ttc *.otf *.dfont *.pfb')]
 
     if args.input is None:
+        import tkinter as tk
+        import tkinter.filedialog as tkfd
+        import tkinter.simpledialog as tksd
+        import tkinter.messagebox as tkmb
         root = tk.Tk()
         root.overrideredirect(1)
         root.withdraw()
