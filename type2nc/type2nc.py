@@ -52,6 +52,7 @@ class Type2NC(object):
         self.__char_target_height = target_height
         self.__output_mode = output_mode
         self.__nc_file_list = list()
+        self.__data_directory = os.path.dirname(os.path.join(os.path.realpath(__file__)))
 
     def type2font(self, font_file_path):
         face = ft.Face(font_file_path)
@@ -109,7 +110,7 @@ class Type2NC(object):
                          len(self.__char_list)))
         output_lines.append(';')
 
-        with open('pgm_head_template.H', 'r') as templateFile:
+        with open(os.path.join(self.__data_directory, 'pgm_head_template.H'), 'r') as templateFile:
             for line in templateFile:
                 output_lines.append(line.rstrip('\n').rstrip('\r'))
 
@@ -117,7 +118,7 @@ class Type2NC(object):
 
         output_lines.extend(char_lines)
 
-        with open('pgm_foot_template.H', 'r') as templateFile:
+        with open(os.path.join(self.__data_directory, 'pgm_foot_template.H'), 'r') as templateFile:
             for line in templateFile:
                 output_lines.append(line.rstrip('\n').rstrip('\r'))
 
@@ -276,9 +277,9 @@ class Type2NC(object):
                         segments.append([points[j], ])
 
                 for segment in segments:
-                    if len(segment) == 2:  # straight segment
+                    if len(segment) == 2:  # line segment, add endpoint to list
                         path_points.append(segment[-1])
-                    else:
+                    else:  # bezier curve, split into segments an add them to list
                         num_points = int(1.0 / self.__bezier_step_size)
                         for t in np.linspace(
                                 0.0,
@@ -347,9 +348,9 @@ class Type2NC(object):
         output_file_path = os.path.join(self.__output_folder, "type2nc_demo.H")
 
         if use_cycle_def:
-            demo_template = 'demo_pgm_template_cycle.H'
+            demo_template = os.path.join(self.__data_directory, 'demo_pgm_template_cycle.H')
         else: 
-            demo_template = 'demo_pgm_template_conventional.H'
+            demo_template = os.path.join(self.__data_directory, 'demo_pgm_template_conventional.H')
 
         with open(demo_template, 'r') as templateFile:
             demo_file_content = templateFile.read()
