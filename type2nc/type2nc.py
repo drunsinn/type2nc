@@ -6,7 +6,7 @@
 
 import os
 import os.path as osp
-import platform
+# import platform
 import datetime
 import string
 import argparse
@@ -81,7 +81,7 @@ class Type2NC(object):
                 # remember the highest x-value to calculate the scale factor
                 if char_data['info']['x_max'] > x_max:
                     x_max = char_data['info']['x_max']
-                
+
         scale_factor = self.__char_target_height / x_max
 
         for char_data in char_data_collection:
@@ -112,16 +112,16 @@ class Type2NC(object):
                          len(self.__char_list)))
         output_lines.append(';')
 
-        with open(osp.join(self.__template_directory, 'pgm_head_template.H'), 'r') as templateFile:
-            for line in templateFile:
+        with open(osp.join(self.__template_directory, 'pgm_head_template.H'), 'r') as template_file:
+            for line in template_file:
                 output_lines.append(line.rstrip('\n').rstrip('\r'))
 
         output_lines.append(';')
 
         output_lines.extend(char_lines)
 
-        with open(osp.join(self.__template_directory, 'pgm_foot_template.H'), 'r') as templateFile:
-            for line in templateFile:
+        with open(osp.join(self.__template_directory, 'pgm_foot_template.H'), 'r') as template_file:
+            for line in template_file:
                 output_lines.append(line.rstrip('\n').rstrip('\r'))
 
         output_lines.append('END PGM {0:s} MM'.format(nc_file_name.upper()))
@@ -240,6 +240,7 @@ class Type2NC(object):
         paths = []
 
         if len(slot.outline.points) < 1:
+            # character is empty
             char_info['x_max'] = 0
             # char_info['x_min'] = 0
             char_info['x_advance'] = slot.advance.x
@@ -247,10 +248,10 @@ class Type2NC(object):
         else:
             points = np.array(outline.points,
                               dtype=[('x', float), ('y', float)])
-            x = points['x']
+            # x = points['x']
             start, end = 0, 0
-            char_info['x_max'] = x.max()
-            # char_info['x_min'] = x.min()
+            char_info['x_max'] = points['x'].max()
+            # char_info['x_min'] = points['x'].min()
             char_info['x_advance'] = slot.advance.x
             char_info['y_advance'] = slot.advance.y
 
@@ -351,11 +352,11 @@ class Type2NC(object):
 
         if use_cycle_def:
             demo_template = osp.join(self.__template_directory, 'demo_pgm_template_cycle.H')
-        else: 
+        else:
             demo_template = osp.join(self.__template_directory, 'demo_pgm_template_conventional.H')
 
-        with open(demo_template, 'r') as templateFile:
-            demo_file_content = templateFile.read()
+        with open(demo_template, 'r') as template_file:
+            demo_file_content = template_file.read()
 
         part_y_max = 10 + len(self.__nc_file_list) * 20 + 10
         current_y = 10
