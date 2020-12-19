@@ -147,8 +147,6 @@ class Type2NC(object):
         for char in empty_chars:
             lable_lines.append('LBL "0x{0:04x}"'.format(ord(chr(char))))
 
-        self._get_paths_of_char(font_face, empty_chars[1])
-
         path, info = self._get_paths_of_char(font_face, empty_chars[1])
 
         lable_lines.extend(self._generate_path_lines(path,
