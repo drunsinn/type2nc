@@ -48,7 +48,7 @@ class Type2NC(object):
         self.__char_target_height = target_height
         self.__output_mode = output_mode
         self.__nc_file_list = list()
-        self.__data_directory = os.path.dirname(os.path.join(os.path.realpath(__file__)))
+        self.__template_directory = os.path.join(os.path.dirname(os.path.join(os.path.realpath(__file__))), 'templates')
 
     def type2font(self, font_file_path):
         face = ft.Face(font_file_path)
@@ -66,6 +66,7 @@ class Type2NC(object):
 
         for char in self.__char_list:
             if face.get_char_index(char) == 0 and char != u"\u0020" and self.__output_mode is not Type2NC.MODE_ALL:
+                # only add empty characters if mode user wants it
                 empty_char_list.append(char)
             else:
                 char_data = dict()
@@ -75,15 +76,19 @@ class Type2NC(object):
                     'info'] = self._get_paths_of_char(face, char)
                 char_data['text'] = self._get_char_name(char)
                 char_data_collection.append(char_data)
-                # find the highest character to calculate the scale factor
+
+                # remember the highest x-value to calculate the scale factor
                 if char_data['info']['x_max'] > x_max:
                     x_max = char_data['info']['x_max']
+                
         scale_factor = self.__char_target_height / x_max
 
         for char_data in char_data_collection:
+            # create and add lines for non empty characters
             char_lines.extend(self._create_char_label(char_data, scale_factor))
 
         if self.__output_mode is Type2NC.MODE_REDUCE:
+            # create and add one label for empty characters
             char_lines.extend(self._create_empty_label(empty_char_list,
                                                        scale_factor,
                                                        face))
@@ -106,7 +111,7 @@ class Type2NC(object):
                          len(self.__char_list)))
         output_lines.append(';')
 
-        with open(os.path.join(self.__data_directory, 'pgm_head_template.H'), 'r') as templateFile:
+        with open(os.path.join(self.__template_directory, 'pgm_head_template.H'), 'r') as templateFile:
             for line in templateFile:
                 output_lines.append(line.rstrip('\n').rstrip('\r'))
 
@@ -114,7 +119,7 @@ class Type2NC(object):
 
         output_lines.extend(char_lines)
 
-        with open(os.path.join(self.__data_directory, 'pgm_foot_template.H'), 'r') as templateFile:
+        with open(os.path.join(self.__template_directory, 'pgm_foot_template.H'), 'r') as templateFile:
             for line in templateFile:
                 output_lines.append(line.rstrip('\n').rstrip('\r'))
 
@@ -344,9 +349,9 @@ class Type2NC(object):
         output_file_path = os.path.join(self.__output_folder, "type2nc_demo.H")
 
         if use_cycle_def:
-            demo_template = os.path.join(self.__data_directory, 'demo_pgm_template_cycle.H')
+            demo_template = os.path.join(self.__template_directory, 'demo_pgm_template_cycle.H')
         else: 
-            demo_template = os.path.join(self.__data_directory, 'demo_pgm_template_conventional.H')
+            demo_template = os.path.join(self.__template_directory, 'demo_pgm_template_conventional.H')
 
         with open(demo_template, 'r') as templateFile:
             demo_file_content = templateFile.read()
