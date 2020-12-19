@@ -5,6 +5,7 @@
 '''
 
 import os
+import os.path as osp
 import platform
 import datetime
 import string
@@ -48,7 +49,7 @@ class Type2NC(object):
         self.__char_target_height = target_height
         self.__output_mode = output_mode
         self.__nc_file_list = list()
-        self.__template_directory = os.path.join(os.path.dirname(os.path.join(os.path.realpath(__file__))), 'templates')
+        self.__template_directory = osp.join(osp.dirname(osp.join(osp.realpath(__file__))), 'templates')
 
     def type2font(self, font_file_path):
         face = ft.Face(font_file_path)
@@ -93,10 +94,10 @@ class Type2NC(object):
                                                        scale_factor,
                                                        face))
 
-        nc_file_name = os.path.basename(font_file_path).split('.')[0] + '.H'
+        nc_file_name = osp.basename(font_file_path).split('.')[0] + '.H'
         nc_file_name = nc_file_name.replace(' ', '_')
         self.__nc_file_list.append(nc_file_name)
-        output_file_path = os.path.join(self.__output_folder, nc_file_name)
+        output_file_path = osp.join(self.__output_folder, nc_file_name)
 
         output_lines = []
         output_lines.append('BEGIN PGM {0:s} MM'.format(nc_file_name.upper()))
@@ -111,7 +112,7 @@ class Type2NC(object):
                          len(self.__char_list)))
         output_lines.append(';')
 
-        with open(os.path.join(self.__template_directory, 'pgm_head_template.H'), 'r') as templateFile:
+        with open(osp.join(self.__template_directory, 'pgm_head_template.H'), 'r') as templateFile:
             for line in templateFile:
                 output_lines.append(line.rstrip('\n').rstrip('\r'))
 
@@ -119,7 +120,7 @@ class Type2NC(object):
 
         output_lines.extend(char_lines)
 
-        with open(os.path.join(self.__template_directory, 'pgm_foot_template.H'), 'r') as templateFile:
+        with open(osp.join(self.__template_directory, 'pgm_foot_template.H'), 'r') as templateFile:
             for line in templateFile:
                 output_lines.append(line.rstrip('\n').rstrip('\r'))
 
@@ -130,7 +131,7 @@ class Type2NC(object):
             output_fp.write('{0:d} {1:s}\n'.format(i, line))
         output_fp.close()
 
-        file_size = os.path.getsize(output_file_path)
+        file_size = osp.getsize(output_file_path)
         if self.__output_mode is Type2NC.MODE_REDUCE or self.__output_mode is Type2NC.MODE_REMOVE:
             print("{0:d} of {1:d} selected characters were found empty".format(
                 len(empty_char_list),
@@ -346,12 +347,12 @@ class Type2NC(object):
         return label_name
 
     def generate_demo_file(self, use_cycle_def=False):
-        output_file_path = os.path.join(self.__output_folder, "type2nc_demo.H")
+        output_file_path = osp.join(self.__output_folder, "type2nc_demo.H")
 
         if use_cycle_def:
-            demo_template = os.path.join(self.__template_directory, 'demo_pgm_template_cycle.H')
+            demo_template = osp.join(self.__template_directory, 'demo_pgm_template_cycle.H')
         else: 
-            demo_template = os.path.join(self.__template_directory, 'demo_pgm_template_conventional.H')
+            demo_template = osp.join(self.__template_directory, 'demo_pgm_template_conventional.H')
 
         with open(demo_template, 'r') as templateFile:
             demo_file_content = templateFile.read()
@@ -490,10 +491,10 @@ if __name__ == "__main__":
 
     font_converter = Type2NC(bezier_step_size=step_size,
                              char_list=char_list,
-                             output_folder=os.path.abspath(output_folder),
+                             output_folder=osp.abspath(output_folder),
                              output_mode=mode_select)
 
     for font_file in font_file_list:
-        font_converter.type2font(os.path.abspath(font_file))
+        font_converter.type2font(osp.abspath(font_file))
 
     font_converter.generate_demo_file(args.use_cycle_def)
