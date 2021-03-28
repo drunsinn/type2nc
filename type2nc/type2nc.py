@@ -6,6 +6,7 @@
 
 import os
 import os.path as osp
+import logging
 # import platform
 import datetime
 import string
@@ -14,6 +15,7 @@ import numpy as np
 from scipy.special import binom
 import freetype as ft
 
+logger = logging.getLogger(__name__)
 
 class Type2NC(object):
     BASIC_LATIN = list(range(0x0020, 0x007E + 1))
@@ -53,8 +55,8 @@ class Type2NC(object):
 
     def type2font(self, font_file_path):
         face = ft.Face(font_file_path)
-        print("File: {0:s}".format(font_file_path))
-        print("Font: {0:s}, Style: {1:s}".format(
+        logger.info("File: {0:s}".format(font_file_path))
+        logger.info("Font: {0:s}, Style: {1:s}".format(
             face.family_name.decode("utf-8"),
             face.style_name.decode("utf-8")))
 
@@ -73,8 +75,8 @@ class Type2NC(object):
                 char_data = dict()
                 char_data['plain'] = str(char)
                 char_data['ord'] = ord(chr(char))
-                char_data['paths'], char_data[
-                    'info'] = self._get_paths_of_char(face, char)
+                char_data['info'] = self._get_char_info(face, char)
+                char_data['paths'] = self._get_paths_of_char(face, char)
                 char_data['text'] = self._get_char_name(char)
                 char_data_collection.append(char_data)
 
@@ -133,13 +135,13 @@ class Type2NC(object):
 
         file_size = osp.getsize(output_file_path)
         if self.__output_mode is Type2NC.MODE_REDUCE or self.__output_mode is Type2NC.MODE_REMOVE:
-            print("{0:d} of {1:d} selected characters were found empty".format(
+            logger.info("{0:d} of {1:d} selected characters were found empty".format(
                 len(empty_char_list),
                 len(self.__char_list)))
         else:
-            print("{0:d} characters were selected".format(
+            logger.info("{0:d} characters were selected".format(
                 len(self.__char_list)))
-        print("lines: {0:d}, file size: {1:d} bytes".format(len(output_lines),
+        logger.info("lines: {0:d}, file size: {1:d} bytes".format(len(output_lines),
                                                             file_size))
 
     def _create_empty_label(self, empty_chars, scale_factor, font_face):
@@ -147,12 +149,11 @@ class Type2NC(object):
         for char in empty_chars:
             lable_lines.append('LBL "0x{0:04x}"'.format(ord(chr(char))))
 
-        path, info = self._get_paths_of_char(font_face, empty_chars[1])
+        path = self._get_paths_of_char(font_face, empty_chars[1])
+        info = self._get_char_info(font_face, empty_chars[1])
 
-        lable_lines.extend(self._generate_path_lines(path,
-                                                     scale_factor))
-        lable_lines.append('QL20 = {0:+f} ; X-Advance'.format(
-                           info['x_advance'] * scale_factor))
+        lable_lines.extend(self._generate_path_lines(path, scale_factor))
+        lable_lines.append('QL20 = {0:+f} ; X-Advance'.format(info['x_advance'] * scale_factor))
         lable_lines.append('LBL 0')
         return lable_lines
 
@@ -223,35 +224,54 @@ class Type2NC(object):
             c_t_y += b_i_n * point[1]
         return c_t_x, c_t_y
 
-    def _get_paths_of_char(self, font_face, char):
-        """Get list of x and y coordinates the outline of a character. Also
-        returns information about the charkter.
+    def _get_char_info(self, font_face, char):
+        """returns information about the charkter as a dictionary
 
         Keyword arguments:
         font_face -- freetype font face from the selected font file
         char -- character which should be converted
         """
+        logger.debug('get information for char number %d', char)
+        font_face.load_char(char)
+        slot = font_face.glyph
+        outline = slot.outline
+        points = np.array(outline.points, dtype=[('x', float), ('y', float)])
         char_info = dict()
+        if len(slot.outline.points) > 0:
+            char_info['x_max'] = points['x'].max()
+            char_info['x_min'] = points['x'].min()
+            char_info['y_max'] = points['y'].max()
+            char_info['y_min'] = points['y'].min()
+            char_info['x_advance'] = slot.advance.x
+            char_info['y_advance'] = slot.advance.y
+        else:
+            char_info['x_max'] = 0
+            char_info['x_min'] = 0
+            char_info['y_max'] = 0
+            char_info['y_min'] = 0
+            char_info['x_advance'] = slot.advance.x
+            char_info['y_advance'] = slot.advance.y
+
+        return char_info
+        
+    def _get_paths_of_char(self, font_face, char):
+        """Get list of x and y coordinates the outline of a character
+
+        Keyword arguments:
+        font_face -- freetype font face from the selected font file
+        char -- character which should be converted
+        """
+        
         font_face.load_char(char)
         slot = font_face.glyph
         outline = slot.outline
         paths = []
 
-        if len(slot.outline.points) < 1:
-            # character is empty
-            char_info['x_max'] = 0
-            # char_info['x_min'] = 0
-            char_info['x_advance'] = slot.advance.x
-            char_info['y_advance'] = slot.advance.y
-        else:
+        if len(slot.outline.points) > 0:
             points = np.array(outline.points,
                               dtype=[('x', float), ('y', float)])
             # x = points['x']
             start, end = 0, 0
-            char_info['x_max'] = points['x'].max()
-            # char_info['x_min'] = points['x'].min()
-            char_info['x_advance'] = slot.advance.x
-            char_info['y_advance'] = slot.advance.y
 
             # iterate over each contour
             for i in range(len(outline.contours)):
@@ -292,8 +312,11 @@ class Type2NC(object):
 
                 paths.append(path_points)
                 start = end + 1
+        else:
+            pass
+            # char is empty
 
-        return paths, char_info
+        return paths
 
     def _get_char_name(self, char):
         """Get name of character for label call.
@@ -372,6 +395,9 @@ class Type2NC(object):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
+    logger.info('test')
+
     parser = argparse.ArgumentParser(
         description="Create Klartext NC code from font files")
     parser.add_argument(
@@ -417,23 +443,23 @@ if __name__ == "__main__":
 
     char_list = list()
     char_list = Type2NC.BASIC_LATIN
-    char_list += Type2NC.C1_CTRL_AND_LATIN1_SUPPLEMENT
-    char_list += Type2NC.IPA_EEXTENTIONS
-    char_list += Type2NC.GREEK_AND_COPTIC_CHARS
-    char_list += Type2NC.CYRILLIC_CHARS
-    char_list += Type2NC.CYRILLIC_SUPPLEMENT_CHARS
-    char_list += Type2NC.ARMENIAN_CHARS
-    char_list += Type2NC.HEBREW_CHARS
-    char_list += Type2NC.ARABIC_CHARS
-    char_list += Type2NC.SYRIAC_CHARS
-    char_list += Type2NC.ARABIC_SUPPLEMENT_CHARS
-    char_list += Type2NC.GENERAL_PUNCTUATION
-    char_list += Type2NC.ARROW_CHARS
-    char_list += Type2NC.MATHEMATICAL_CHARS
-    char_list += Type2NC.MISC_TECH_CHARS
-    char_list += Type2NC.MISC_SYMBOLS
-    char_list += Type2NC.DINGBATS
-    char_list += Type2NC.CJK_UNIFIED_IDEOGRAPHS_PART
+    # char_list += Type2NC.C1_CTRL_AND_LATIN1_SUPPLEMENT
+    # char_list += Type2NC.IPA_EEXTENTIONS
+    # char_list += Type2NC.GREEK_AND_COPTIC_CHARS
+    # char_list += Type2NC.CYRILLIC_CHARS
+    # char_list += Type2NC.CYRILLIC_SUPPLEMENT_CHARS
+    # char_list += Type2NC.ARMENIAN_CHARS
+    # char_list += Type2NC.HEBREW_CHARS
+    # char_list += Type2NC.ARABIC_CHARS
+    # char_list += Type2NC.SYRIAC_CHARS
+    # char_list += Type2NC.ARABIC_SUPPLEMENT_CHARS
+    # char_list += Type2NC.GENERAL_PUNCTUATION
+    # char_list += Type2NC.ARROW_CHARS
+    # char_list += Type2NC.MATHEMATICAL_CHARS
+    # char_list += Type2NC.MISC_TECH_CHARS
+    # char_list += Type2NC.MISC_SYMBOLS
+    # char_list += Type2NC.DINGBATS
+    # char_list += Type2NC.CJK_UNIFIED_IDEOGRAPHS_PART
 
     file_types = [('Font', '*.ttf *.tte *.ttc *.otf *.dfont *.pfb')]
 
