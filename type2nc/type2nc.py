@@ -4,205 +4,117 @@
 @author: drunsinn, TobFleischi, Klartext
 '''
 
-import os
-import os.path as osp
 import logging
-# import platform
-import datetime
-import string
 import argparse
+import pathlib
+import string
+import freetype
 import numpy as np
 from scipy.special import binom
-import freetype as ft
 
-logger = logging.getLogger(__name__)
+class Point():
+    def __init__(self, x, y):
+        self.x = float(x)
+        self.y = float(y)
+    
+    def __str__(self):
+        return "X:{:+0.4f} Y:{:+0.4f}".format(self.x, self.y)
+    
+    def scaled_str(self, scale_factor=1.0):
+        return "X{:+0.4f} Y{:+0.4f}".format(self.x * scale_factor, self.y * scale_factor)
 
 class Type2NC(object):
-    BASIC_LATIN = list(range(0x0020, 0x007E + 1))
-    C1_CTRL_AND_LATIN1_SUPPLEMENT = list(range(0x0080, 0x00FF + 1))
-    IPA_EEXTENTIONS = list(range(0x0250, 0x02AF + 1))
-    GREEK_AND_COPTIC_CHARS = list(range(0x0370, 0x03FF + 1))
-    CYRILLIC_CHARS = list(range(0x0400, 0x04FF + 1))
-    CYRILLIC_SUPPLEMENT_CHARS = list(range(0x0500, 0x052F + 1))
-    ARMENIAN_CHARS = list(range(0x0530, 0x058F + 1))
-    HEBREW_CHARS = list(range(0x0590, 0x05FF + 1))
-    ARABIC_CHARS = list(range(0x0600, 0x06FF + 1))
-    SYRIAC_CHARS = list(range(0x0700, 0x074F + 1))
-    ARABIC_SUPPLEMENT_CHARS = list(range(0x0750, 0x077F + 1))
-    GENERAL_PUNCTUATION = list(range(0x2000, 0x206F + 1))
-    ARROW_CHARS = list(range(0x2190, 0x21FF + 1))
-    MATHEMATICAL_CHARS = list(range(0x2200, 0x22FF + 1))
-    MISC_TECH_CHARS = list(range(0x2300, 0x23FF + 1))
-    MISC_SYMBOLS = list(range(0x2600, 0x26FF + 1))
-    DINGBATS = list(range(0x2700, 0x27BF + 1))
-    CJK_UNIFIED_IDEOGRAPHS_PART = list(range(0x4E00, 0x9FFF + 1))
+    def __init__(self, output_folder, target_height, step_size):
+        self._log = logging.getLogger("Type2NC")
+        self.__output_folder = output_folder.resolve(strict=True)
+        self.__target_height = target_height
+        self.__step_size = step_size
+        self.__char_size = 64
+        self._log.debug("using folder '%s', step size '%f'", self.__output_folder, self.__step_size)
+    
+    def convert(self, font_file):
+        self._log.debug("running for font file '%s'", font_file.resolve(strict=True))
 
-    MODE_ALL = 1
-    MODE_REDUCE = 2
-    MODE_REMOVE = 3
+        font_face = freetype.Face(str(font_file.resolve(strict=True)))
+        self._log.debug("Font: %s, Style: %s, Format: %s", font_face.family_name.decode("utf-8"), font_face.style_name.decode("utf-8"), font_face.get_format().decode("utf-8"))
+        font_face.set_char_size(height=self.__char_size)
+        
+        self._log.debug("Font BBox (min:max) X:(%d:%d) Y:(%d:%d)", font_face.bbox.xMax, font_face.bbox.xMin, font_face.bbox.yMax, font_face.bbox.yMin)
+        scale_factor = self.__target_height / font_face.bbox.xMax
+        self._log.debug("set scaling factor to %f", scale_factor)
 
-    def __init__(self, bezier_step_size, char_list, output_folder, size_pt=50,
-                 size_dpi=100, target_height=10, output_mode=MODE_ALL):
-        self.__bezier_step_size = bezier_step_size
-        self.__char_list = char_list
-        self.__output_folder = output_folder
-        self.__char_size_pt = size_pt
-        self.__char_size_dpi = size_dpi
-        self.__char_target_height = target_height
-        self.__output_mode = output_mode
-        self.__nc_file_list = list()
-        self.__template_directory = osp.join(osp.dirname(osp.join(osp.realpath(__file__))), 'templates')
-
-    def type2font(self, font_file_path):
-        face = ft.Face(font_file_path)
-        logger.info("File: {0:s}".format(font_file_path))
-        logger.info("Font: {0:s}, Style: {1:s}".format(
-            face.family_name.decode("utf-8"),
-            face.style_name.decode("utf-8")))
-
-        face.set_char_size(height=self.__char_size_pt * self.__char_size_dpi)
-
-        char_lines = []
-        char_data_collection = list()
-        empty_char_list = list()
-        x_max = 0
-
-        for char in self.__char_list:
-            if face.get_char_index(char) == 0 and char != u"\u0020" and self.__output_mode is not Type2NC.MODE_ALL:
-                # only add empty characters if mode user wants it
-                empty_char_list.append(char)
-            else:
-                char_data = dict()
-                char_data['plain'] = str(char)
-                char_data['ord'] = ord(chr(char))
-                char_data['info'] = self._get_char_info(face, char)
-                char_data['paths'] = self._get_paths_of_char(face, char)
-                char_data['text'] = self._get_char_name(char)
-                char_data_collection.append(char_data)
-
-                # remember the highest x-value to calculate the scale factor
-                if char_data['info']['x_max'] > x_max:
-                    x_max = char_data['info']['x_max']
-
-        scale_factor = self.__char_target_height / x_max
-
-        for char_data in char_data_collection:
-            # create and add lines for non empty characters
-            char_lines.extend(self._create_char_label(char_data, scale_factor))
-
-        if self.__output_mode is Type2NC.MODE_REDUCE:
-            # create and add one label for empty characters
-            char_lines.extend(self._create_empty_label(empty_char_list,
-                                                       scale_factor,
-                                                       face))
-
-        nc_file_name = osp.basename(font_file_path).split('.')[0] + '.H'
+        nc_file_name = font_file.name.replace(font_file.suffix, '.H')
         nc_file_name = nc_file_name.replace(' ', '_')
-        self.__nc_file_list.append(nc_file_name)
-        output_file_path = osp.join(self.__output_folder, nc_file_name)
+        nc_file_path = self.__output_folder.joinpath(nc_file_name)
 
-        output_lines = []
-        output_lines.append('BEGIN PGM {0:s} MM'.format(nc_file_name.upper()))
-        output_lines.append(';')
-        output_lines.append('; Font PGM generated by type2nc')
-        output_lines.append('; {0:s} - {1:s}'.format(
-            face.family_name.decode("utf-8"),
-            face.style_name.decode("utf-8")))
-        output_lines.append('; Generated: {:%Y-%m-%d %H:%M:%S}'.format(
-                         datetime.datetime.today()))
-        output_lines.append('; Number of characters: {0:d}'.format(
-                         len(self.__char_list)))
-        output_lines.append(';')
+        with open(nc_file_path, 'w') as ncfp:
 
-        with open(osp.join(self.__template_directory, 'pgm_head_template.H'), 'r') as template_file:
-            for line in template_file:
-                output_lines.append(line.rstrip('\n').rstrip('\r'))
+            for char_str in list(string.ascii_letters + string.digits + string.punctuation):
+                char_index = font_face.get_char_index(ord(char_str))
+                if char_index > 0:
+                    self._log.debug("character '%s' availible at index %d", char_str, char_index)
+                    #print(font_face.get_glyph_name(char_index, buffer_max=64))
 
-        output_lines.append(';')
+                    font_face.load_char(char_str)
+                    c_glyph_slot = font_face.glyph
 
-        output_lines.extend(char_lines)
+                    contour_paths = list()
 
-        with open(osp.join(self.__template_directory, 'pgm_foot_template.H'), 'r') as template_file:
-            for line in template_file:
-                output_lines.append(line.rstrip('\n').rstrip('\r'))
+                    self._log.debug("character '%s' advance X:%d Y:%d", char_str, c_glyph_slot.advance.x, c_glyph_slot.advance.y)
 
-        output_lines.append('END PGM {0:s} MM'.format(nc_file_name.upper()))
+                    if c_glyph_slot.outline.n_points > 0:
+                        self._log.debug("character '%s' has %d points in %d contour(s) with %d tags", char_str, c_glyph_slot.outline.n_points, c_glyph_slot.outline.n_contours, len(c_glyph_slot.outline.tags))
+                        
+                        start, end = 0, 0
 
-        output_fp = open(output_file_path, 'w')
-        for i, line in enumerate(output_lines):
-            output_fp.write('{0:d} {1:s}\n'.format(i, line))
-        output_fp.close()
+                        for i in range(0, c_glyph_slot.outline.n_contours):
+                            path_points = list()
+                            contour_segments = list()
 
-        file_size = osp.getsize(output_file_path)
-        if self.__output_mode is Type2NC.MODE_REDUCE or self.__output_mode is Type2NC.MODE_REMOVE:
-            logger.info("{0:d} of {1:d} selected characters were found empty".format(
-                len(empty_char_list),
-                len(self.__char_list)))
-        else:
-            logger.info("{0:d} characters were selected".format(
-                len(self.__char_list)))
-        logger.info("lines: {0:d}, file size: {1:d} bytes".format(len(output_lines),
-                                                            file_size))
+                            end = c_glyph_slot.outline.contours[i] + 1
+                            
+                            # slice lists of points and tags according to length of contour
+                            contour_tags = c_glyph_slot.outline.tags[start:end]
+                            contour_points = c_glyph_slot.outline.points[start:end]
 
-    def _create_empty_label(self, empty_chars, scale_factor, font_face):
-        lable_lines = list()
-        for char in empty_chars:
-            lable_lines.append('LBL "0x{0:04x}"'.format(ord(chr(char))))
+                            # add first point in list to segment to start things of
+                            contour_segments.append([contour_points[0], ])
 
-        path = self._get_paths_of_char(font_face, empty_chars[1])
-        info = self._get_char_info(font_face, empty_chars[1])
+                            # split the list of all the points in separate segments
+                            # with the right amount for each contour type
+                            for j in range(0, len(contour_points)):
+                                # skip first point as it is already in the list
+                                contour_segments[-1].append(contour_points[j])
+                                if contour_tags[j] & (1 << 0) and j < (len(contour_points) - 1):
+                                    contour_segments.append([contour_points[j], ])
 
-        lable_lines.extend(self._generate_path_lines(path, scale_factor))
-        lable_lines.append('QL20 = {0:+f} ; X-Advance'.format(info['x_advance'] * scale_factor))
-        lable_lines.append('LBL 0')
-        return lable_lines
+                            # finaly, check each segment for the number of points it contains.
+                            # if only two the segmet is a line so we can just add the end point to our list
+                            # if there are more than two points in the segment we have to step along the bezier curve
+                            for segment in contour_segments:
+                                if len(segment) == 2:  # line segment, add endpoint to list
+                                    path_points.append(Point(x=segment[0][0], y=segment[0][1]))
+                                else:  # bezier curve, split into segments an add them to list
+                                    num_points = int(1.0 / self.__step_size)
+                                    for t in np.linspace(0.0, 1.0, num_points, endpoint=True):
+                                        path_points.append(self._point_on_curve(segment, t))
 
-    def _create_char_label(self, char_data, scale_factor):
-        """Generate klartext code for character
+                            start = end
+                            
+                            path_points.append(Point(x=contour_segments[0][0][0], y=contour_segments[0][0][1])) # close path by addind the first point a second time
+                            
+                            contour_paths.append(path_points)
+                            self._log.debug("created %d points for character contour %d",  len(path_points), i)
 
-        Keyword arguments:
-        char_data -- information on the character
-        scale_factor -- factor for scaling the x and y values
-        """
-        char_lines = list()
-        # plain_char_name = char_data['plain']
-        if char_data['text'] is not None:
-            char_lines.append('* -   {0:s}'.format(char_data['text']))
-            char_lines.append('LBL "{0:s}"'.format(char_data['text']))
-        char_lines.append('* -   Unicode Hex:0x{0:04x} : {1:s}'.format(
-            char_data['ord'], char_data['plain']))
-        char_lines.append('LBL "0x{0:04x}"'.format(char_data['ord']))
+                        self._log.debug("created %d paths for character", len(contour_paths))
 
-        char_lines.extend(self._generate_path_lines(char_data['paths'],
-                                                    scale_factor))
+                    else:
+                        self._log.debug("character '%s' is empty, skipping", char_str)
+                    
+                    ncfp.writelines(self._creat_font_label(char_str, contour_paths, c_glyph_slot.advance.x, scale_factor))
 
-        if char_data['text'] is not None:
-            char_lines.append('LBL "{0:s}_X-Advance"'.format(char_data['text']))
-        char_lines.append('LBL "0x{0:04x}_X-Advance"'.format(char_data['ord']))
-        char_lines.append('QL20 = {0:+f} ; X-Advance'.format(
-            char_data['info']['x_advance'] * scale_factor))
-        char_lines.append('LBL 0')
-        char_lines.append(';')
-        return char_lines
-
-    def _generate_path_lines(self, path_data, scale_factor):
-        path_lines = list()
-        for path in path_data:
-            path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} FMAX'.format(
-                path[0][0] * scale_factor,
-                path[0][1] * scale_factor))
-            path_lines.append('L  Z+QL15 F+Q206')
-            for point in path[1:]:
-                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} F+Q207'.format(
-                    point[0] * scale_factor, point[1] * scale_factor))
-            if not (path[0][0] == point[0] and
-                    path[0][1] == point[1]):
-                path_lines.append('L  X{0:+0.4f}  Y{1:+0.4f} F+Q207'.format(
-                    path[0][0] * scale_factor,
-                    path[0][1] * scale_factor))
-            path_lines.append('L  Z+Q204 F AUTO')
-
-        return path_lines
+                else:
+                    self._log.debug("character '%s' was selected but is not availible, skipping", char_str)
 
     def _point_on_curve(self, point_list, distance_factor):
         """Get x and y coordinate for point along a bezier curve relative to
@@ -222,108 +134,38 @@ class Type2NC(object):
                     np.power((1 - distance_factor), (n - i))
             c_t_x += b_i_n * point[0]
             c_t_y += b_i_n * point[1]
-        return c_t_x, c_t_y
+        return Point(x=c_t_x, y=c_t_y)
+    
+    def _creat_font_label(self, char_str, contour_paths, x_advance, scale_factor):
+        self._log.debug("created lable for char %s", char_str)
+        char_lines = list()
+        label_name = self._translate_lable_name(char_str)
+        self._log.debug("writing label for character '%s': %d %s", char_str, ord(char_str), label_name)
 
-    def _get_char_info(self, font_face, char):
-        """returns information about the charkter as a dictionary
-
-        Keyword arguments:
-        font_face -- freetype font face from the selected font file
-        char -- character which should be converted
-        """
-        logger.debug('get information for char number %d', char)
-        font_face.load_char(char)
-        slot = font_face.glyph
-        outline = slot.outline
-        points = np.array(outline.points, dtype=[('x', float), ('y', float)])
-        char_info = dict()
-        if len(slot.outline.points) > 0:
-            char_info['x_max'] = points['x'].max()
-            char_info['x_min'] = points['x'].min()
-            char_info['y_max'] = points['y'].max()
-            char_info['y_min'] = points['y'].min()
-            char_info['x_advance'] = slot.advance.x
-            char_info['y_advance'] = slot.advance.y
+        char_lines.append("* -   {0:s}\n".format(char_str))
+        if label_name is not None:
+            char_lines.append("LBL \"{0:s}\"\n".format(label_name))
+            char_lines.append("* -   Unicode Hex:0x{0:04x} : {1:s}\n".format(ord(char_str), label_name))
         else:
-            char_info['x_max'] = 0
-            char_info['x_min'] = 0
-            char_info['y_max'] = 0
-            char_info['y_min'] = 0
-            char_info['x_advance'] = slot.advance.x
-            char_info['y_advance'] = slot.advance.y
-
-        return char_info
+            char_lines.append("* -   Unicode Hex:0x{0:04x}\n".format(ord(char_str)))
+        char_lines.append("LBL \"0x{0:04x}\"\n".format(ord(char_str)))
         
-    def _get_paths_of_char(self, font_face, char):
-        """Get list of x and y coordinates the outline of a character
+        for path in contour_paths:
+            char_lines.append("L {0:s} FMAX\n".format(path[0].scaled_str()))
+            char_lines.append("L Z+QL15 F+Q206\n")
+            for point in path[1:]:
+                char_lines.append("L {0:s} F+Q207\n".format(point.scaled_str()))
+            #if not (path[0] == point and path[0][1] == point[1]):
+            #    char_lines.append("L  X{0:+0.4f}  Y{1:+0.4f} F+Q207".format(path[0][0] * scale_factor, path[0][1] * scale_factor))
+            char_lines.append("L Z+Q204 F AUTO\n")
 
-        Keyword arguments:
-        font_face -- freetype font face from the selected font file
-        char -- character which should be converted
-        """
-        
-        font_face.load_char(char)
-        slot = font_face.glyph
-        outline = slot.outline
-        paths = []
+        if label_name is not None: char_lines.append("LBL \"{0:s}_X-Advance\"\n".format(label_name))
+        char_lines.append("LBL \"0x{0:04x}_X-Advance\"\n".format(ord(char_str)))
+        char_lines.append("QL20 = {0:+f} ; X-Advance\n".format(x_advance))
+        char_lines.append("LBL 0\n;\n")
+        return char_lines
 
-        if len(slot.outline.points) > 0:
-            points = np.array(outline.points,
-                              dtype=[('x', float), ('y', float)])
-            # x = points['x']
-            start, end = 0, 0
-
-            # iterate over each contour
-            for i in range(len(outline.contours)):
-                end = outline.contours[i]  # upper end of contour points
-                points = outline.points[start:end + 1]  # contour points
-
-                points.append(points[0])
-
-                # list of contour types
-                tags = outline.tags[start:end + 1]
-                tags.append(tags[0])
-
-                segments = [[points[0], ], ]
-
-                path_points = []
-                path_points.append(points[0])
-
-                # split the list of all the points in separate parts
-                # with the right amount for each contour type
-                for j in range(1, len(points)):
-                    # skip first point as it is already in the list
-                    segments[-1].append(points[j])
-                    if tags[j] & (1 << 0) and j < (len(points) - 1):
-                        segments.append([points[j], ])
-
-                for segment in segments:
-                    if len(segment) == 2:  # line segment, add endpoint to list
-                        path_points.append(segment[-1])
-                    else:  # bezier curve, split into segments an add them to list
-                        num_points = int(1.0 / self.__bezier_step_size)
-                        for t in np.linspace(
-                                0.0,
-                                1.0,
-                                num_points,
-                                endpoint=True):
-                            path_points.append(
-                                self._point_on_curve(segment, t))
-
-                paths.append(path_points)
-                start = end + 1
-        else:
-            pass
-            # char is empty
-
-        return paths
-
-    def _get_char_name(self, char):
-        """Get name of character for label call.
-
-        Keyword arguments:
-        char -- character
-        """
+    def _translate_lable_name(self, char_str):
         label_map = {
             '!': 'exclamation_mark',
             '\'': 'apostrophe',
@@ -357,169 +199,34 @@ class Type2NC(object):
             'Ü': 'UE',
             ' ': 'space'
         }
-
-        char = chr(char)
-
-        if char in label_map.keys():
-            label_name = label_map[char]
-        elif char in string.ascii_letters + string.digits + string.punctuation:
-            label_name = char
+        if char_str in label_map.keys():
+            label_name = label_map[char_str]
+        elif char_str in string.ascii_letters + string.digits + string.punctuation:
+            label_name = char_str
         else:
             label_name = None  # could not identify character
         return label_name
 
-    def generate_demo_file(self, use_cycle_def=False):
-        output_file_path = osp.join(self.__output_folder, "type2nc_demo.H")
-
-        if use_cycle_def:
-            demo_template = osp.join(self.__template_directory, 'demo_pgm_template_cycle.H')
-        else:
-            demo_template = osp.join(self.__template_directory, 'demo_pgm_template_conventional.H')
-
-        with open(demo_template, 'r') as template_file:
-            demo_file_content = template_file.read()
-
-        part_y_max = 10 + len(self.__nc_file_list) * 20 + 10
-        current_y = 10
-
-        filler = ""
-        pgm_call_template = 'L X+5 Y+5 Z+100 R0 FMAX\n'
-        pgm_call_template += 'CALL PGM {1:s}\n;'
-        for file_path in self.__nc_file_list:
-            filler += pgm_call_template.format(current_y, file_path)
-            current_y += 20
-
-        output_fp = open(output_file_path, 'w')
-        output_fp.write(demo_file_content.format(part_y_max, filler))
-        output_fp.close()
-
-
 if __name__ == "__main__":
     logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
-    logger.info('test')
+    logger = logging.getLogger('main')
+    logger.debug("startup")
 
-    parser = argparse.ArgumentParser(
-        description="Create Klartext NC code from font files")
-    parser.add_argument(
-        "-i",
-        "--input",
-        metavar="font input file",
-        nargs='+',
-        help="path of one or more font files")
-    parser.add_argument(
-        "-o",
-        "--out",
-        metavar="output folder",
-        required=False,
-        help="path to the output folder. If not set, use current directory.")
-    parser.add_argument(
-        "-s",
-        "--step_size",
-        metavar="step size",
-        type=float,
-        default=0.05,
-        required=False,
-        help="step size: between 0.001 (very fine) and 0.2 (very coarse)")
-    parser.add_argument(
-        "-r",
-        "--remove_empty",
-        action='store_true',
-        default=False,
-        help="if set, output won't contain labels for empty chars. overrides -c")
-    parser.add_argument(
-        "-c",
-        "--reduce_empty",
-        action='store_true',
-        default=False,
-        help="if set, output will contain labels for empty characters but no actual data")
-    parser.add_argument(
-        "-z",
-        "--use_cycle_def",
-        action='store_true',
-        default=False,
-        help="if set, demo output will use cycle 225 for definition of parameters")
+    cmdl_parser = argparse.ArgumentParser(description="Create Klartext NC code from font files")
+    cmdl_parser.add_argument("-i", "--input", metavar="font input file", nargs='+', required=True, type=pathlib.Path, help="path of one or more font files")
+    cmdl_parser.add_argument("-o", "--output", metavar="output folder", required=True, type=pathlib.Path, help="path to the output folder where klartext files are generated")
+    cmdl_parser.add_argument("-s", "--step_size", metavar="step size", type=float, default=0.05, required=False, help="step size for converting curves to line segmenst: between 0.001 (very fine) and 0.2 (very coarse)")
 
-    args = parser.parse_args()
+    arguments = cmdl_parser.parse_args()
 
-    char_list = list()
-    char_list = Type2NC.BASIC_LATIN
-    # char_list += Type2NC.C1_CTRL_AND_LATIN1_SUPPLEMENT
-    # char_list += Type2NC.IPA_EEXTENTIONS
-    # char_list += Type2NC.GREEK_AND_COPTIC_CHARS
-    # char_list += Type2NC.CYRILLIC_CHARS
-    # char_list += Type2NC.CYRILLIC_SUPPLEMENT_CHARS
-    # char_list += Type2NC.ARMENIAN_CHARS
-    # char_list += Type2NC.HEBREW_CHARS
-    # char_list += Type2NC.ARABIC_CHARS
-    # char_list += Type2NC.SYRIAC_CHARS
-    # char_list += Type2NC.ARABIC_SUPPLEMENT_CHARS
-    # char_list += Type2NC.GENERAL_PUNCTUATION
-    # char_list += Type2NC.ARROW_CHARS
-    # char_list += Type2NC.MATHEMATICAL_CHARS
-    # char_list += Type2NC.MISC_TECH_CHARS
-    # char_list += Type2NC.MISC_SYMBOLS
-    # char_list += Type2NC.DINGBATS
-    # char_list += Type2NC.CJK_UNIFIED_IDEOGRAPHS_PART
+    if arguments.input is not None:
+        if not arguments.output.is_dir():
+            logger.error("the output path '%s' is not a folder", arguments.output)
+            
+        conv = Type2NC(output_folder=arguments.output, target_height=10, step_size=arguments.step_size)
+        for ff in arguments.input:
+            if ff.is_file():
+                
+                conv.convert(ff)
 
-    file_types = [('Font', '*.ttf *.tte *.ttc *.otf *.dfont *.pfb')]
-
-    if args.input is None:
-        import tkinter as tk
-        import tkinter.filedialog as tkfd
-        import tkinter.simpledialog as tksd
-        import tkinter.messagebox as tkmb
-        root = tk.Tk()
-        root.overrideredirect(1)
-        root.withdraw()
-
-        font_file_list = tkfd.askopenfilename(parent=root,
-                                              title="Select Font file",
-                                              filetypes=file_types,
-                                              multiple=1)
-        if len(font_file_list) < 1:
-            exit(-1)
-
-        output_folder = tkfd.askdirectory(parent=root,
-                                          title="Select destination folder")
-        if len(output_folder) < 1:
-            exit(-2)
-
-        remove_empty = tkmb.askyesno("Remove empty", "Remove empty characters from output?")
-
-        if not remove_empty:
-            reduce_empty = tkmb.askyesno("Reduce empty", "Reduce filesize by reducing empty characters?")
-
-        step_size = tksd.askfloat("Step Size",
-                                  "Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting Splines",
-                                  initialvalue=0.05,
-                                  minvalue=0.001,
-                                  maxvalue=0.2)
-        if step_size is None:
-            exit(-3)
-
-    else:
-        font_file_list = args.input
-        step_size = args.step_size
-        if args.out is None:
-            output_folder = os.getcwd()
-        else:
-            output_folder = args.out
-        remove_empty = args.remove_empty
-        reduce_empty = args.reduce_empty
-
-    if remove_empty:
-        mode_select = Type2NC.MODE_REMOVE
-    elif reduce_empty:
-        mode_select = Type2NC.MODE_REDUCE
-    else:
-        mode_select = Type2NC.MODE_ALL
-
-    font_converter = Type2NC(bezier_step_size=step_size,
-                             char_list=char_list,
-                             output_folder=osp.abspath(output_folder),
-                             output_mode=mode_select)
-
-    for font_file in font_file_list:
-        font_converter.type2font(osp.abspath(font_file))
-
-    font_converter.generate_demo_file(args.use_cycle_def)
+    logger.debug("finished")
