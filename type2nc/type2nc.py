@@ -56,7 +56,6 @@ class Type2NC(object):
                 char_index = font_face.get_char_index(ord(char_str))
                 if char_index > 0:
                     self._log.debug("character '%s' availible at index %d", char_str, char_index)
-                    #print(font_face.get_glyph_name(char_index, buffer_max=64))
 
                     font_face.load_char(char_str)
                     c_glyph_slot = font_face.glyph
@@ -148,8 +147,7 @@ class Type2NC(object):
         c_t_x = 0
         c_t_y = 0
         for i, point in enumerate(point_list):
-            b_i_n = binom(n, i) * (distance_factor ** i) *\
-                    np.power((1 - distance_factor), (n - i))
+            b_i_n = binom(n, i) * (distance_factor ** i) * np.power((1 - distance_factor), (n - i))
             c_t_x += b_i_n * point[0]
             c_t_y += b_i_n * point[1]
         return Point(x=c_t_x, y=c_t_y)
@@ -225,14 +223,137 @@ class Type2NC(object):
             label_name = None  # could not identify character
         return label_name
 
+class Type2NC_UI:
+    def __init__(self, root):
+        self._window_root = root
+        root.title("type2nc")
+        width=400
+        height=210
+        screenwidth = root.winfo_screenwidth()
+        screenheight = root.winfo_screenheight()
+        alignstr = '%dx%d+%d+%d' % (width, height, (screenwidth - width) / 2, (screenheight - height) / 2)
+        self._window_root.geometry(alignstr)
+        self._window_root.resizable(width=False, height=False)
+
+        ft = tkFont.Font(family='Times',size=12)
+
+        self.btn_select_font=tk.Button(self._window_root)
+        
+        self.btn_select_font["font"] = ft
+        self.btn_select_font["justify"] = "center"
+        self.btn_select_font["text"] = "Select Font File"
+        self.btn_select_font.place(x=20, y=20, width=160, height=30)
+        self.btn_select_font["command"] = self.btn_select_font_command
+
+        self.lbl_font_filename=tk.Label(self._window_root)
+        self.lbl_font_filename["font"] = ft
+        self.lbl_font_filename["justify"] = "center"
+        self.lbl_font_filename["text"] = " "
+        self.lbl_font_filename.place(x=200, y=20, width=180, height=30)
+
+        self.btn_select_folder=tk.Button(self._window_root)
+        self.btn_select_folder["font"] = ft
+        self.btn_select_folder["justify"] = "center"
+        self.btn_select_folder["text"] = "Select destination Folder"
+        self.btn_select_folder.place(x=20, y=60, width=160, height=30)
+        self.btn_select_folder["command"] = self.btn_select_folder_command
+
+        self.lbl_output_path=tk.Label(self._window_root)
+        self.lbl_output_path["font"] = ft
+        self.lbl_output_path["justify"] = "center"
+        self.lbl_output_path["text"] = " "
+        self.lbl_output_path.place(x=200, y=60, width=180, height=30)
+
+        self.btn_select_step=tk.Button(self._window_root)
+        self.btn_select_step["font"] = ft
+        self.btn_select_step["justify"] = "center"
+        self.btn_select_step["text"] = "Select step size"
+        self.btn_select_step.place(x=20, y=100, width=160, height=30)
+        self.btn_select_step["command"] = self.btn_select_step_command
+
+        self.lbl_step_size=tk.Label(self._window_root)
+        self.lbl_step_size["font"] = ft
+        self.lbl_step_size["justify"] = "center"
+        self.lbl_step_size["text"] = " "
+        self.lbl_step_size.place(x=200, y=100, width=180, height=30)
+        
+        self.btn_generate_nc=tk.Button(self._window_root)
+        self.btn_generate_nc["font"] = ft
+        self.btn_generate_nc["justify"] = "center"
+        self.btn_generate_nc["text"] = "generate"
+        self.btn_generate_nc.place(x=140, y=140, width=150, height=30)
+        self.btn_generate_nc["command"] = self.btn_generate_nc_command
+
+        self.pb_progress = ttk.Progressbar(self._window_root)
+        self.pb_progress["orient"] = tk.HORIZONTAL
+        self.pb_progress["length"] = 100
+        self.pb_progress.place(x=115, y=170, width=200, height=30)
+        self.pb_progress["mode"] = 'determinate'
+        self.pb_progress['value'] = 0
+
+        self.selected_font_files = list()
+        self.output_path = None
+        self.step_size = None
+
+
+    def btn_select_font_command(self):
+        file_types = [('Font', '*.ttf *.tte *.ttc *.otf *.dfont *.pfb')]
+        font_file_list = tkfd.askopenfilename(parent=self._window_root, title="Select Font file", filetypes=file_types, multiple=1)
+        for path in font_file_list:
+            self.selected_font_files.append(pathlib.Path(path))
+
+        if len(self.selected_font_files) == 1:
+            self.lbl_font_filename["text"] = str(self.selected_font_files[0].name)
+        else:
+            self.lbl_font_filename["text"] = "%d files selected" % len(self.selected_font_files)
+
+    def btn_select_folder_command(self):
+        selected_folder = tkfd.askdirectory(parent=self._window_root, title="Select destination folder")
+        self.output_path = pathlib.Path(selected_folder)
+
+        if not self.output_path.is_dir():
+            self.output_path = None
+            self.lbl_output_path["text"] = "No folder selected"
+        else:
+            self.lbl_output_path["text"] = self.output_path.name
+
+    def btn_select_step_command(self):
+        selected_step = tksd.askfloat(parent=self._window_root, title="Step Size", prompt="Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting Splines", initialvalue=0.05, minvalue=0.001, maxvalue=0.2)
+        if selected_step is None:
+            self.step_size = None
+            self.lbl_step_size["text"] = "No step size selected"
+        else:
+            self.step_size = selected_step
+            self.lbl_step_size["text"] = "%f" % self.step_size
+
+    def btn_generate_nc_command(self):
+        if len(self.selected_font_files) == 0:
+            tkmb.showwarning(parent=self._window_root, title="Missing parameter", message="No font files selected")
+            return
+        if self.output_path is None:
+            tkmb.showwarning(parent=self._window_root, title="Missing parameter", message="No output folder selected")
+            return
+        if self.step_size is None:
+            tkmb.showwarning(parent=self._window_root, title="Missing parameter", message="No step size selected")
+            return
+
+        self.pb_progress['value'] = 0
+        conv = Type2NC(output_folder=self.output_path, target_height=10, step_size=self.step_size)
+        for i, ff in enumerate(self.selected_font_files):
+            if ff.is_file():
+                conv.convert(ff)
+            self.pb_progress['value'] = (i + 1) * (100 / len(self.selected_font_files))
+
+        tkmb.showwarning(parent=self._window_root, title="Finished", message="Finished processing all font files")
+
 if __name__ == "__main__":
-    logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
+    logging.basicConfig(encoding='utf-8', level=logging.INFO)
     logger = logging.getLogger('main')
     logger.debug("startup")
 
-    cmdl_parser = argparse.ArgumentParser(description="Create Klartext NC code from font files")
-    cmdl_parser.add_argument("-i", "--input", metavar="font input file", nargs='+', required=True, type=pathlib.Path, help="path of one or more font files")
-    cmdl_parser.add_argument("-o", "--output", metavar="output folder", required=True, type=pathlib.Path, help="path to the output folder where klartext files are generated")
+    cmdl_parser = argparse.ArgumentParser(description="Create Klartext NC code from font files. If no options are given, start gui")
+    cmdl_parser.add_argument("-i", "--input", metavar="font input file", nargs='+', type=pathlib.Path, help="path of one or more font files")
+    cmdl_parser.add_argument("-o", "--output", metavar="output folder", type=pathlib.Path, help="path to the output folder where klartext files are generated")
     cmdl_parser.add_argument("-s", "--step_size", metavar="step size", type=float, default=0.05, required=False, help="step size for converting curves to line segmenst: between 0.001 (very fine) and 0.2 (very coarse)")
 
     arguments = cmdl_parser.parse_args()
@@ -246,5 +367,15 @@ if __name__ == "__main__":
             if ff.is_file():
                 
                 conv.convert(ff)
+    else:
+        import tkinter.filedialog as tkfd
+        import tkinter.simpledialog as tksd
+        import tkinter.messagebox as tkmb
+        import tkinter as tk
+        import tkinter.ttk as ttk
+        import tkinter.font as tkFont
+        root = tk.Tk()
+        app = Type2NC_UI(root)
+        root.mainloop()
 
     logger.debug("finished")
