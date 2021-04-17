@@ -26,28 +26,30 @@ class Point():
         return "X{:+0.4f} Y{:+0.4f}".format(self.x * scale_factor, self.y * scale_factor)
 
 class Type2NC(object):
-    IPA_EEXTENTIONS = list(range(0x0250, 0x02AF + 1))
-    GREEK_AND_COPTIC_CHARS = list(range(0x0370, 0x03FF + 1))
-    CYRILLIC_CHARS = list(range(0x0400, 0x04FF + 1))
-    CYRILLIC_SUPPLEMENT_CHARS = list(range(0x0500, 0x052F + 1))
-    ARMENIAN_CHARS = list(range(0x0530, 0x058F + 1))
-    HEBREW_CHARS = list(range(0x0590, 0x05FF + 1))
-    ARABIC_CHARS = list(range(0x0600, 0x06FF + 1))
-    SYRIAC_CHARS = list(range(0x0700, 0x074F + 1))
-    ARABIC_SUPPLEMENT_CHARS = list(range(0x0750, 0x077F + 1))
-    ARROW_CHARS = list(range(0x2190, 0x21FF + 1))
-    MATHEMATICAL_CHARS = list(range(0x2200, 0x22FF + 1))
-    MISC_TECH_CHARS = list(range(0x2300, 0x23FF + 1))
-    MISC_SYMBOLS = list(range(0x2600, 0x26FF + 1))
-    DINGBATS = list(range(0x2700, 0x27BF + 1))
-    CJK_UNIFIED_IDEOGRAPHS_PART = list(range(0x4E00, 0x9FFF + 1))
+    # IPA_EEXTENTIONS = list(range(0x0250, 0x02AF + 1))
+    # GREEK_AND_COPTIC_CHARS = list(range(0x0370, 0x03FF + 1))
+    # CYRILLIC_CHARS = list(range(0x0400, 0x04FF + 1))
+    # CYRILLIC_SUPPLEMENT_CHARS = list(range(0x0500, 0x052F + 1))
+    # ARMENIAN_CHARS = list(range(0x0530, 0x058F + 1))
+    # HEBREW_CHARS = list(range(0x0590, 0x05FF + 1))
+    # ARABIC_CHARS = list(range(0x0600, 0x06FF + 1))
+    # SYRIAC_CHARS = list(range(0x0700, 0x074F + 1))
+    # ARABIC_SUPPLEMENT_CHARS = list(range(0x0750, 0x077F + 1))
+    # ARROW_CHARS = list(range(0x2190, 0x21FF + 1))
+    # MATHEMATICAL_CHARS = list(range(0x2200, 0x22FF + 1))
+    # MISC_TECH_CHARS = list(range(0x2300, 0x23FF + 1))
+    # MISC_SYMBOLS = list(range(0x2600, 0x26FF + 1))
+    # DINGBATS = list(range(0x2700, 0x27BF + 1))
+    # CJK_UNIFIED_IDEOGRAPHS_PART = list(range(0x4E00, 0x9FFF + 1))
 
     def __init__(self, output_folder, target_height, step_size):
         self._log = logging.getLogger("Type2NC")
         self.__output_folder = output_folder.resolve(strict=True)
         self.__target_height = target_height
         self.__step_size = step_size
-        self.__char_size = 64
+        self.__char_size_pt = 10
+        self.__char_size_dpi = 140
+        #self.__char_size = 64
         self.__characters = list()
         self.__characters.extend(list(range(0x0020, 0x007E + 1))) # BASIC_LATIN
         self.__characters.extend(list(range(0x0080, 0x00FF + 1))) # C1_CTRL_AND_LATIN1_SUPPLEMENT
@@ -60,10 +62,11 @@ class Type2NC(object):
 
         font_face = freetype.Face(str(font_file.resolve(strict=True)))
         self._log.info("Font: %s, Style: %s, Format: %s", font_face.family_name.decode("utf-8"), font_face.style_name.decode("utf-8"), font_face.get_format().decode("utf-8"))
-        font_face.set_char_size(height=self.__char_size)
+        #font_face.set_char_size(height=self.__char_size)
+        font_face.set_char_size(height=self.__char_size_pt * self.__char_size_dpi, hres=self.__char_size_dpi, vres=self.__char_size_dpi)
         
         self._log.info("Font BBox (min:max) X:(%d:%d) Y:(%d:%d)", font_face.bbox.xMax, font_face.bbox.xMin, font_face.bbox.yMax, font_face.bbox.yMin)
-        scale_factor = self.__target_height / (abs(font_face.bbox.xMax) + abs(font_face.bbox.xMin))
+        scale_factor = self.__target_height / font_face.bbox.yMax
         self._log.info("set scaling factor to %f", scale_factor)
 
         nc_file_name = font_file.name.replace(font_file.suffix, '.H')
@@ -96,7 +99,7 @@ class Type2NC(object):
 
                     contour_paths = list()
 
-                    self._log.debug("character '%s' advance X:%d Y:%d", chr(char_code), c_glyph_slot.advance.x, c_glyph_slot.advance.y)
+                    self._log.debug("character '%s' advance X:%d Y:%d linear horizonal advance:%d", chr(char_code), c_glyph_slot.advance.x, c_glyph_slot.advance.y, c_glyph_slot.linearHoriAdvance)
 
                     if c_glyph_slot.outline.n_points > 0:
                         self._log.debug("character '%s' has %d points in %d contour(s) with %d tags", chr(char_code), c_glyph_slot.outline.n_points, c_glyph_slot.outline.n_contours, len(c_glyph_slot.outline.tags))
@@ -110,8 +113,8 @@ class Type2NC(object):
                             end = c_glyph_slot.outline.contours[i] + 1
                             
                             # slice lists of points and tags according to length of contour
-                            contour_tags = c_glyph_slot.outline.tags[start:end]
-                            contour_points = c_glyph_slot.outline.points[start:end]
+                            contour_tags = c_glyph_slot.outline.tags[start:end + 1]
+                            contour_points = c_glyph_slot.outline.points[start:end + 1]
 
                             # add first point in list to segment to start things of
                             contour_segments.append([contour_points[0], ])
@@ -143,12 +146,18 @@ class Type2NC(object):
                             self._log.debug("created %d points for character contour %d",  len(path_points), i)
 
                         self._log.debug("created %d paths for character", len(contour_paths))
-
+                        
                     else:
                         self._log.debug("character '%s' is empty, skipping", chr(char_code))
 
-                    ncfp.writelines(self._creat_font_label(chr(char_code), contour_paths, c_glyph_slot.advance.x, scale_factor))
+                    if c_glyph_slot.advance.x > 0:
+                        x_advance = c_glyph_slot.advance.x
+                    else:
+                        self._log.debug("character '%s' has no advance x value, use glyph width %f", chr(char_code), c_glyph_slot.metrics.width)
+                        x_advance = c_glyph_slot.metrics.width
 
+                    ncfp.writelines(self._creat_font_label(chr(char_code), contour_paths, x_advance, scale_factor))
+                    
                 else:
                     self._log.debug("character '%s' was selected but is not availible, skipping", chr(char_code))
 
@@ -193,8 +202,6 @@ class Type2NC(object):
 
         if char_str in string.ascii_letters + string.digits:
             char_lines.append("* -   {0:s}\n".format(char_str))
-        else:
-            char_lines.append("* -   0x{0:04x}\n".format(ord(char_str)))
 
         if label_name is not None:
             char_lines.append("LBL \"{0:s}\"\n".format(label_name))
@@ -204,15 +211,16 @@ class Type2NC(object):
         char_lines.append("LBL \"0x{0:04x}\"\n".format(ord(char_str)))
         
         for path in contour_paths:
-            char_lines.append("L {0:s} FMAX\n".format(path[0].scaled_str()))
+            char_lines.append("L {0:s} FMAX\n".format(path[0].scaled_str(scale_factor)))
             char_lines.append("L Z+QL15 F+Q206\n")
             for point in path[1:]:
-                char_lines.append("L {0:s} F+Q207\n".format(point.scaled_str()))
+                char_lines.append("L {0:s} F+Q207\n".format(point.scaled_str(scale_factor)))
+
             char_lines.append("L Z+Q204 F AUTO\n")
 
         if label_name is not None: char_lines.append("LBL \"{0:s}_X-Advance\"\n".format(label_name))
         char_lines.append("LBL \"0x{0:04x}_X-Advance\"\n".format(ord(char_str)))
-        char_lines.append("QL20 = {0:+f} ; X-Advance\n".format(x_advance))
+        char_lines.append("QL20 = {0:+f} ; X-Advance\n".format(x_advance * scale_factor))
         char_lines.append("LBL 0\n;\n")
         return char_lines
 
@@ -454,7 +462,7 @@ class Type2NC_UI:
         del self.selected_font_files[:]
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger('main')
     logger.debug("startup")
 
