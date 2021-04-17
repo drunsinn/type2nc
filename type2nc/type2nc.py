@@ -26,18 +26,41 @@ class Point():
         return "X{:+0.4f} Y{:+0.4f}".format(self.x * scale_factor, self.y * scale_factor)
 
 class Type2NC(object):
+    BASIC_LATIN = (0x0020, 0x007E + 1)
+    C1_CTRL_AND_LATIN1_SUPPLEMENT = (0x0080, 0x00FF + 1)
+    IPA_EEXTENTIONS = (0x0250, 0x02AF + 1)
+    GREEK_AND_COPTIC_CHARS = (0x0370, 0x03FF + 1)
+    CYRILLIC_CHARS = (0x0400, 0x04FF + 1)
+    CYRILLIC_SUPPLEMENT_CHARS = (0x0500, 0x052F + 1)
+    ARMENIAN_CHARS = (0x0530, 0x058F + 1)
+    HEBREW_CHARS = (0x0590, 0x05FF + 1)
+    ARABIC_CHARS = (0x0600, 0x06FF + 1)
+    SYRIAC_CHARS = (0x0700, 0x074F + 1)
+    ARABIC_SUPPLEMENT_CHARS = (0x0750, 0x077F + 1)
+    GENERAL_PUNCTUATION = (0x2000, 0x206F + 1)
+    ARROW_CHARS = (0x2190, 0x21FF + 1)
+    MATHEMATICAL_CHARS = (0x2200, 0x22FF + 1)
+    MISC_TECH_CHARS = (0x2300, 0x23FF + 1)
+    MISC_SYMBOLS = (0x2600, 0x26FF + 1)
+    DINGBATS = (0x2700, 0x27BF + 1)
+    CJK_UNIFIED_IDEOGRAPHS_PART = (0x4E00, 0x9FFF + 1)
+
     def __init__(self, output_folder, target_height, step_size):
         self._log = logging.getLogger("Type2NC")
         self.__output_folder = output_folder.resolve(strict=True)
         self.__target_height = target_height
         self.__step_size = step_size
         self.__char_size = 64
+        self.__char_ranges = (self.BASIC_LATIN, self.C1_CTRL_AND_LATIN1_SUPPLEMENT, self.IPA_EEXTENTIONS, self.GREEK_AND_COPTIC_CHARS, self.CYRILLIC_CHARS,
+                              self.CYRILLIC_SUPPLEMENT_CHARS, self.ARMENIAN_CHARS, self.HEBREW_CHARS, self.SYRIAC_CHARS, self.ARABIC_SUPPLEMENT_CHARS,
+                              self.GENERAL_PUNCTUATION, self.GENERAL_PUNCTUATION, self.ARROW_CHARS, self.MATHEMATICAL_CHARS, self.MISC_TECH_CHARS, self.MISC_SYMBOLS,
+                              self.DINGBATS, self.CJK_UNIFIED_IDEOGRAPHS_PART)
         self._log.debug("using folder '%s', step size '%f'", self.__output_folder, self.__step_size)
     
     def convert(self, font_file):
-        characters = string.ascii_letters + string.digits + string.punctuation
+        characters = self._build_char_string(self.__char_ranges)
 
-        self._log.debug("running for font file '%s'", font_file.resolve(strict=True))
+        self._log.debug("running for font file '%s' for %d characters", font_file.resolve(strict=True), len(characters))
 
         font_face = freetype.Face(str(font_file.resolve(strict=True)))
         self._log.info("Font: %s, Style: %s, Format: %s", font_face.family_name.decode("utf-8"), font_face.style_name.decode("utf-8"), font_face.get_format().decode("utf-8"))
@@ -58,7 +81,12 @@ class Type2NC(object):
                 if char_index > 0:
                     self._log.debug("character '%s' availible at index %d", char_str, char_index)
 
-                    font_face.load_char(char_str)
+                    try:
+                        font_face.load_char(char_str)
+                    except freetype.ft_errors.FT_Exception as e:
+                        self._log.error("character '%s' at index %d could not be loaded, skipp. Error: %s", char_str, char_index, e)
+                        break
+
                     c_glyph_slot = font_face.glyph
 
                     contour_paths = list()
@@ -133,6 +161,15 @@ class Type2NC(object):
 
                 else:
                     self._log.debug("character '%s' was selected but is not availible, skipping", char_str)
+        self._log.info("finished writing %s", nc_file_name)
+
+    def _build_char_string(self, range_list):
+        characters = ""
+        for char_range in range_list:
+            for i in range(char_range[0], char_range[1]):
+                characters += chr(i)
+
+        return characters
 
     def _point_on_curve(self, point_list, distance_factor):
         """Get x and y coordinate for point along a bezier curve relative to
