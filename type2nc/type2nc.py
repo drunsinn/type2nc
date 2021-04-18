@@ -67,7 +67,7 @@ class Type2NC(object):
         font_face.set_char_size(height=self.__char_size_pt * self.__char_size_dpi, hres=self.__char_size_dpi, vres=self.__char_size_dpi)
         
         self._log.info("Font BBox (min:max) X:(%d:%d) Y:(%d:%d)", font_face.bbox.xMax, font_face.bbox.xMin, font_face.bbox.yMax, font_face.bbox.yMin)
-        scale_factor = self.__target_height / font_face.bbox.yMax
+        scale_factor = self.__target_height / (abs(font_face.bbox.yMax) + abs(font_face.bbox.yMin))
         self._log.info("set scaling factor to %f", scale_factor)
 
         nc_file_name = font_file.name.replace(font_file.suffix, '.H')
