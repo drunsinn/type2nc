@@ -42,19 +42,19 @@ class Type2NC(object):
         self.__characters.extend(list(range(0x2000, 0x206F + 1))) # GENERAL_PUNCTUATION
         self.__characters.extend(list(range(0x0250, 0x02AF + 1))) # IPA_EEXTENTIONS
         self.__characters.extend(list(range(0x0370, 0x03FF + 1))) # GREEK_AND_COPTIC_CHARS
-        self.__characters.extend(list(range(0x0400, 0x04FF + 1))) # CYRILLIC_CHARS
-        self.__characters.extend(list(range(0x0500, 0x052F + 1))) # CYRILLIC_SUPPLEMENT_CHARS
-        self.__characters.extend(list(range(0x0530, 0x058F + 1))) # ARMENIAN_CHARS
-        self.__characters.extend(list(range(0x0590, 0x05FF + 1))) # HEBREW_CHARS
-        self.__characters.extend(list(range(0x0600, 0x06FF + 1))) # ARABIC_CHARS
-        self.__characters.extend(list(range(0x0700, 0x074F + 1))) # SYRIAC_CHARS
-        self.__characters.extend(list(range(0x0750, 0x077F + 1))) # ARABIC_SUPPLEMENT_CHARS
+        # self.__characters.extend(list(range(0x0400, 0x04FF + 1))) # CYRILLIC_CHARS
+        # self.__characters.extend(list(range(0x0500, 0x052F + 1))) # CYRILLIC_SUPPLEMENT_CHARS
+        # self.__characters.extend(list(range(0x0530, 0x058F + 1))) # ARMENIAN_CHARS
+        # self.__characters.extend(list(range(0x0590, 0x05FF + 1))) # HEBREW_CHARS
+        # self.__characters.extend(list(range(0x0600, 0x06FF + 1))) # ARABIC_CHARS
+        # self.__characters.extend(list(range(0x0700, 0x074F + 1))) # SYRIAC_CHARS
+        # self.__characters.extend(list(range(0x0750, 0x077F + 1))) # ARABIC_SUPPLEMENT_CHARS
         self.__characters.extend(list(range(0x2190, 0x21FF + 1))) # ARROW_CHARS
         self.__characters.extend(list(range(0x2200, 0x22FF + 1))) # MATHEMATICAL_CHARS
         self.__characters.extend(list(range(0x2300, 0x23FF + 1))) # MISC_TECH_CHARS
         self.__characters.extend(list(range(0x2600, 0x26FF + 1))) # MISC_SYMBOLS
-        self.__characters.extend(list(range(0x2700, 0x27BF + 1))) # DINGBATS
-        self.__characters.extend(list(range(0x4E00, 0x9FFF + 1))) # CJK_UNIFIED_IDEOGRAPHS_PART
+        # self.__characters.extend(list(range(0x2700, 0x27BF + 1))) # DINGBATS
+        # self.__characters.extend(list(range(0x4E00, 0x9FFF + 1))) # CJK_UNIFIED_IDEOGRAPHS_PART
 
         self._log.debug("using folder '%s', step size '%f'", self.__output_folder, self.__step_size)
     
@@ -107,15 +107,16 @@ class Type2NC(object):
                         
                         start, end = 0, 0
 
-                        contour_segments = list()
-                        
                         for i in range(0, c_glyph_slot.outline.n_contours):
                             path_points = list()
-                            end = c_glyph_slot.outline.contours[i] + 1
+                            contour_segments = list()
+                            end = c_glyph_slot.outline.contours[i]
                             
                             # slice lists of points and tags according to length of contour
-                            contour_tags = c_glyph_slot.outline.tags[start:end]
-                            contour_points = c_glyph_slot.outline.points[start:end]
+                            contour_tags = c_glyph_slot.outline.tags[start:end+1]
+                            contour_tags.append(c_glyph_slot.outline.tags[0])
+                            contour_points = c_glyph_slot.outline.points[start:end+1]
+                            contour_points.append(c_glyph_slot.outline.points[0])
 
                             # add first point in list to segment to start things of
                             contour_segments.append([contour_points[0], ])
@@ -141,7 +142,7 @@ class Type2NC(object):
                             # close path by addind the first point a second time
                             path_points.append(Point(x=contour_segments[0][0][0], y=contour_segments[0][0][1]))
                             
-                            start = end
+                            start = end + 1
                             contour_paths.append(path_points)
                             self._log.debug("created %d points for character contour %d",  len(path_points), i)
 
@@ -216,6 +217,7 @@ class Type2NC(object):
             for point in path[1:]:
                 char_lines.append("L {0:s} F+Q207\n".format(point.scaled_str(scale_factor)))
             char_lines.append("L Z+Q204 F+Q206\n")
+        char_lines.append("L Z+QL32 FMAX\n")
 
         if label_name is not None: char_lines.append("LBL \"{0:s}_X-Advance\"\n".format(label_name))
         char_lines.append("LBL \"0x{0:04x}_X-Advance\"\n".format(ord(char_str)))
@@ -330,7 +332,7 @@ class Type2NC_UI:
         self.btn_select_folder = tk.Button(self._window_root)
         self.btn_select_folder["font"] = ft
         self.btn_select_folder["justify"] = "center"
-        self.btn_select_folder["text"] = "Select destination Folder"
+        self.btn_select_folder["text"] = "Select Destination Folder"
         self.btn_select_folder.place(x=20, y=current_y, width=160, height=component_height)
         self.btn_select_folder["command"] = self.btn_select_folder_command
 
@@ -344,7 +346,7 @@ class Type2NC_UI:
         self.btn_select_step = tk.Button(self._window_root)
         self.btn_select_step["font"] = ft
         self.btn_select_step["justify"] = "center"
-        self.btn_select_step["text"] = "Select step size"
+        self.btn_select_step["text"] = "Select Step Size"
         self.btn_select_step.place(x=20, y=current_y, width=160, height=component_height)
         self.btn_select_step["command"] = self.btn_select_step_command
 
@@ -359,7 +361,7 @@ class Type2NC_UI:
         self.chk_generate_demos = tk.Checkbutton(self._window_root)
         self.chk_generate_demos["font"] = ft
         self.chk_generate_demos["justify"] = "left"
-        self.chk_generate_demos["text"] = "Create demo files"
+        self.chk_generate_demos["text"] = "Create Demo Files"
         self.chk_generate_demos.place(x=20, y=current_y, width=150, height=component_height)
         self.chk_generate_demos["onvalue"] = 1
         self.chk_generate_demos["offvalue"] = 0
@@ -370,7 +372,7 @@ class Type2NC_UI:
         self.btn_generate_nc = tk.Button(self._window_root)
         self.btn_generate_nc["font"] = ft
         self.btn_generate_nc["justify"] = "center"
-        self.btn_generate_nc["text"] = "generate"
+        self.btn_generate_nc["text"] = "Generate"
         self.btn_generate_nc.place(x=140, y=current_y, width=150, height=component_height)
         self.btn_generate_nc["command"] = self.btn_generate_nc_command
         current_y += delta_y
@@ -463,7 +465,7 @@ class Type2NC_UI:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger('main')
     logger.debug("startup")
 

@@ -1,7 +1,7 @@
 ;
 ;Usage: set the following Q-Parameters to the desired values
 ;QS500 is the text
-;Q200 is the sage distance
+;Q200 is the safe distance for pre positioning
 ;Q203 is the Z-coordinate of the surface
 ;Q201 is the depth
 ;Q204 is the safe Z-coordinate for traversing between cuts
