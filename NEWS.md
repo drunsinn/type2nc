@@ -3,10 +3,12 @@
   - this releas is a complete rewrite!
     - much cleaner code for better readability in a more 'pythonic' way
     - logging is now handeld via the logging module instead of plain print commands
-    - TODO: move GUI-code to seperate python script
-    - TBD: remove some command line options
+    - move GUI-code to seperate python class with main window
+    - remove confusing command line options
+    - always create both demo files
+    - reduce memory consumption
 
-# Reselase notes for 0.5.0
+# Release notes for 0.5.0
   - address comments from users Klartext and TobFleischi at https://de.industryarena.com/heidenhain/forum/gravieren-von-text-in-anderen-sprachen-ohne-cam--83908.html . These changes break compatibility for previous versions
     - add parameter for plunging feed rate
     - use active offset and add incremental changes
