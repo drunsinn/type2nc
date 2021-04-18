@@ -113,8 +113,8 @@ class Type2NC(object):
                             end = c_glyph_slot.outline.contours[i] + 1
                             
                             # slice lists of points and tags according to length of contour
-                            contour_tags = c_glyph_slot.outline.tags[start:end + 1]
-                            contour_points = c_glyph_slot.outline.points[start:end + 1]
+                            contour_tags = c_glyph_slot.outline.tags[start:end]
+                            contour_points = c_glyph_slot.outline.points[start:end]
 
                             # add first point in list to segment to start things of
                             contour_segments.append([contour_points[0], ])
@@ -122,7 +122,6 @@ class Type2NC(object):
                             # split the list of all the points in separate segments
                             # with the right amount for each contour type
                             for j in range(0, len(contour_points)):
-                                # skip first point as it is already in the list
                                 contour_segments[-1].append(contour_points[j])
                                 if contour_tags[j] & (1 << 0) and j < (len(contour_points) - 1):
                                     contour_segments.append([contour_points[j], ])
@@ -215,7 +214,6 @@ class Type2NC(object):
             char_lines.append("L Z+QL15 F+Q206\n")
             for point in path[1:]:
                 char_lines.append("L {0:s} F+Q207\n".format(point.scaled_str(scale_factor)))
-
             char_lines.append("L Z+Q204 F AUTO\n")
 
         if label_name is not None: char_lines.append("LBL \"{0:s}_X-Advance\"\n".format(label_name))
