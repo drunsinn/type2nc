@@ -1,9 +1,9 @@
 
 # Release notes for 0.6.0
-  - this releas is a complete rewrite!
+  - this release is a complete rewrite!
     - much cleaner code for better readability in a more 'pythonic' way
-    - logging is now handeld via the logging module instead of plain print commands
-    - move GUI-code to seperate python class with main window
+    - logging is now handled via the logging module instead of plain print commands
+    - move GUI-code to separate python class with main window
     - remove confusing command line options
     - always create both demo files
     - reduce memory consumption

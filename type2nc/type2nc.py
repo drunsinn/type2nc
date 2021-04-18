@@ -88,19 +88,19 @@ class Type2NC(object):
             for char_code in self.__characters:
                 char_index = font_face.get_char_index(char_code)
                 if char_index > 0:
-                    self._log.debug("character '%s' availible at index %d", chr(char_code), char_index)
+                    self._log.debug("character '%s' available at index %d", chr(char_code), char_index)
 
                     try:
                         font_face.load_char(chr(char_code))
                     except freetype.ft_errors.FT_Exception as e:
-                        self._log.error("character '%s' at index %d could not be loaded, skipp. Error: %s", chr(char_code), char_index, e)
+                        self._log.error("character '%s' at index %d could not be loaded, skip. Error: %s", chr(char_code), char_index, e)
                         break
 
                     c_glyph_slot = font_face.glyph
 
                     contour_paths = list()
 
-                    self._log.debug("character '%s' advance X:%d Y:%d linear horizonal advance:%d", chr(char_code), c_glyph_slot.advance.x, c_glyph_slot.advance.y, c_glyph_slot.linearHoriAdvance)
+                    self._log.debug("character '%s' advance X:%d Y:%d linear horizontal advance:%d", chr(char_code), c_glyph_slot.advance.x, c_glyph_slot.advance.y, c_glyph_slot.linearHoriAdvance)
 
                     if c_glyph_slot.outline.n_points > 1:
                         self._log.debug("character '%s' has %d points in %d contour(s) with %d tags", chr(char_code), c_glyph_slot.outline.n_points, c_glyph_slot.outline.n_contours, len(c_glyph_slot.outline.tags))
@@ -128,7 +128,7 @@ class Type2NC(object):
                                 if contour_tags[j] & (1 << 0) and j < (len(contour_points) - 1):
                                     contour_segments.append([contour_points[j], ])
 
-                            # finaly, check each segment for the number of points it contains.
+                            # finally, check each segment for the number of points it contains.
                             # if only two the segmet is a line so we can just add the end point to our list
                             # if there are more than two points in the segment we have to step along the bezier curve
                             for segment in contour_segments:
@@ -160,7 +160,7 @@ class Type2NC(object):
                     ncfp.writelines(self._creat_font_label(chr(char_code), contour_paths, x_advance, scale_factor))
                     
                 else:
-                    self._log.debug("character '%s' was selected but is not availible, skipping", chr(char_code))
+                    self._log.debug("character '%s' was selected but is not available, skipping", chr(char_code))
 
             with open(pathlib.Path.cwd().joinpath("templates", "pgm_foot_template.H")) as template_file:
                     ncfp.writelines(template_file)
@@ -196,9 +196,9 @@ class Type2NC(object):
         return Point(x=c_t_x, y=c_t_y)
     
     def _creat_font_label(self, char_str, contour_paths, x_advance, scale_factor):
-        self._log.debug("created lable for char %s", char_str)
+        self._log.debug("created label for char %s", char_str)
         char_lines = list()
-        label_name = self._translate_lable_name(char_str)
+        label_name = self._translate_label_name(char_str)
         self._log.debug("writing label for character '%s': %d %s", char_str, ord(char_str), label_name)
 
         if char_str in string.ascii_letters + string.digits:
@@ -225,7 +225,7 @@ class Type2NC(object):
         char_lines.append("LBL 0\n;\n")
         return char_lines
 
-    def _translate_lable_name(self, char_str):
+    def _translate_label_name(self, char_str):
         label_map = {
             '!': 'exclamation_mark',
             '\'': 'apostrophe',
