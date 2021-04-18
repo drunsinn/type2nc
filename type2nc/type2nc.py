@@ -471,7 +471,7 @@ if __name__ == "__main__":
     cmdl_parser.add_argument("-i", "--input", metavar="font input file", nargs='+', type=pathlib.Path, help="path of one or more font files")
     cmdl_parser.add_argument("-o", "--output", metavar="output folder", type=pathlib.Path, help="path to the output folder where klartext files are generated")
     cmdl_parser.add_argument("-s", "--step_size", metavar="step size", type=float, default=0.05, required=False, help="step size for converting curves to line segmenst: between 0.001 (very fine) and 0.2 (very coarse)")
-    cmdl_parser.add_argument("-d", "--create_demos", action='store_true', default=False, required=False, help="if set, demo output will use cycle 225 for definition of parameters")
+    cmdl_parser.add_argument("-d", "--create_demos", action="store_true", default=False, required=False, help="if set, demo output will use cycle 225 for definition of parameters")
     arguments = cmdl_parser.parse_args()
 
     if arguments.input is not None:
