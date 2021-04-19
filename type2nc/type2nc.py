@@ -28,7 +28,7 @@ class Point():
 
 class Type2NC(object):
 
-    def __init__(self, output_folder, target_height, step_size):
+    def __init__(self, output_folder, target_height, step_size, unicode_numbers=None):
         self._log = logging.getLogger("Type2NC")
         self.__output_folder = output_folder.resolve(strict=True)
         self.__target_height = target_height
@@ -37,25 +37,28 @@ class Type2NC(object):
         self.__char_size_dpi = 140
 
         self.__characters = list()
-        self.__characters.extend(list(range(0x0020, 0x007E + 1))) # BASIC_LATIN
-        self.__characters.extend(list(range(0x0080, 0x00FF + 1))) # C1_CTRL_AND_LATIN1_SUPPLEMENT
-        self.__characters.extend(list(range(0x2000, 0x206F + 1))) # GENERAL_PUNCTUATION
-        self.__characters.extend(list(range(0x0250, 0x02AF + 1))) # IPA_EEXTENTIONS
-        self.__characters.extend(list(range(0x0370, 0x03FF + 1))) # GREEK_AND_COPTIC_CHARS
-        # self.__characters.extend(list(range(0x0400, 0x04FF + 1))) # CYRILLIC_CHARS
-        # self.__characters.extend(list(range(0x0500, 0x052F + 1))) # CYRILLIC_SUPPLEMENT_CHARS
-        # self.__characters.extend(list(range(0x0530, 0x058F + 1))) # ARMENIAN_CHARS
-        # self.__characters.extend(list(range(0x0590, 0x05FF + 1))) # HEBREW_CHARS
-        # self.__characters.extend(list(range(0x0600, 0x06FF + 1))) # ARABIC_CHARS
-        # self.__characters.extend(list(range(0x0700, 0x074F + 1))) # SYRIAC_CHARS
-        # self.__characters.extend(list(range(0x0750, 0x077F + 1))) # ARABIC_SUPPLEMENT_CHARS
-        self.__characters.extend(list(range(0x2190, 0x21FF + 1))) # ARROW_CHARS
-        self.__characters.extend(list(range(0x2200, 0x22FF + 1))) # MATHEMATICAL_CHARS
-        self.__characters.extend(list(range(0x2300, 0x23FF + 1))) # MISC_TECH_CHARS
-        self.__characters.extend(list(range(0x2600, 0x26FF + 1))) # MISC_SYMBOLS
-        # self.__characters.extend(list(range(0x2700, 0x27BF + 1))) # DINGBATS
-        # self.__characters.extend(list(range(0x4E00, 0x9FFF + 1))) # CJK_UNIFIED_IDEOGRAPHS_PART
-
+        if unicode_numbers is None:
+            self.__characters.extend(list(range(0x0020, 0x007E + 1))) # BASIC_LATIN
+            self.__characters.extend(list(range(0x0080, 0x00FF + 1))) # C1_CTRL_AND_LATIN1_SUPPLEMENT
+            self.__characters.extend(list(range(0x2000, 0x206F + 1))) # GENERAL_PUNCTUATION
+            self.__characters.extend(list(range(0x0250, 0x02AF + 1))) # IPA_EEXTENTIONS
+            self.__characters.extend(list(range(0x0370, 0x03FF + 1))) # GREEK_AND_COPTIC_CHARS
+            self.__characters.extend(list(range(0x0400, 0x04FF + 1))) # CYRILLIC_CHARS
+            self.__characters.extend(list(range(0x0500, 0x052F + 1))) # CYRILLIC_SUPPLEMENT_CHARS
+            self.__characters.extend(list(range(0x0530, 0x058F + 1))) # ARMENIAN_CHARS
+            self.__characters.extend(list(range(0x0590, 0x05FF + 1))) # HEBREW_CHARS
+            self.__characters.extend(list(range(0x0600, 0x06FF + 1))) # ARABIC_CHARS
+            self.__characters.extend(list(range(0x0700, 0x074F + 1))) # SYRIAC_CHARS
+            self.__characters.extend(list(range(0x0750, 0x077F + 1))) # ARABIC_SUPPLEMENT_CHARS
+            self.__characters.extend(list(range(0x2190, 0x21FF + 1))) # ARROW_CHARS
+            self.__characters.extend(list(range(0x2200, 0x22FF + 1))) # MATHEMATICAL_CHARS
+            self.__characters.extend(list(range(0x2300, 0x23FF + 1))) # MISC_TECH_CHARS
+            self.__characters.extend(list(range(0x2600, 0x26FF + 1))) # MISC_SYMBOLS
+            self.__characters.extend(list(range(0x2700, 0x27BF + 1))) # DINGBATS
+            self.__characters.extend(list(range(0x4E00, 0x9FFF + 1))) # CJK_UNIFIED_IDEOGRAPHS_PART
+        else:
+            self.__characters.extend(unicode_numbers)
+        
         self._log.debug("using folder '%s', step size '%f'", self.__output_folder, self.__step_size)
     
     def convert(self, font_file):
@@ -301,7 +304,7 @@ class Type2NC_UI:
         self._log.debug("start building tk ui")
         self._window_root = root
         root.title("type2nc")
-        width=400
+        width=650
         height=260
         screenwidth = root.winfo_screenwidth()
         screenheight = root.winfo_screenheight()
@@ -309,7 +312,7 @@ class Type2NC_UI:
         self._window_root.geometry(alignstr)
         self._window_root.resizable(width=False, height=False)
 
-        ft = tkFont.Font(family='Times',size=12)
+        ft = tkFont.Font(family='Times', size=12)
 
         current_y = 20
         delta_y = 40
@@ -365,8 +368,8 @@ class Type2NC_UI:
         self.chk_generate_demos.place(x=20, y=current_y, width=150, height=component_height)
         self.chk_generate_demos["onvalue"] = 1
         self.chk_generate_demos["offvalue"] = 0
-        self.chk_generate_demos.select()
         self.chk_generate_demos["variable"] = self.gen_demo_files
+        self.chk_generate_demos.select()
         current_y += delta_y
 
         self.btn_generate_nc = tk.Button(self._window_root)
@@ -383,6 +386,66 @@ class Type2NC_UI:
         self.pb_progress.place(x=115, y=current_y, width=200, height=component_height)
         self.pb_progress["mode"] = 'determinate'
         self.pb_progress['value'] = 0
+        current_y = 20
+
+        self.select_basics = tk.IntVar()
+        self.chk_select_basic = tk.Checkbutton(self._window_root)
+        self.chk_select_basic["font"] = ft
+        self.chk_select_basic["justify"] = "left"
+        self.chk_select_basic["text"] = "ASCII 0x20-0x7E and Latin1 0x80-0xFF"
+        self.chk_select_basic.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_basic["onvalue"] = 1
+        self.chk_select_basic["offvalue"] = 0
+        self.chk_select_basic["variable"] = self.select_basics
+        self.chk_select_basic.select()
+        current_y += delta_y
+
+        self.select_punctuation = tk.IntVar()
+        self.chk_select_punctuation = tk.Checkbutton(self._window_root)
+        self.chk_select_punctuation["font"] = ft
+        self.chk_select_punctuation["justify"] = "left"
+        self.chk_select_punctuation["text"] = "General Punctuation 0x2000-0x206F"
+        self.chk_select_punctuation.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_punctuation["onvalue"] = 1
+        self.chk_select_punctuation["offvalue"] = 0
+        self.chk_select_punctuation["variable"] = self.select_punctuation
+        self.chk_select_punctuation.select()
+        current_y += delta_y
+
+        self.select_ipa = tk.IntVar()
+        self.chk_select_ipa = tk.Checkbutton(self._window_root)
+        self.chk_select_ipa["font"] = ft
+        self.chk_select_ipa["justify"] = "left"
+        self.chk_select_ipa["text"] = "IPA Extention 0x0250-0x02AF"
+        self.chk_select_ipa.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_ipa["onvalue"] = 1
+        self.chk_select_ipa["offvalue"] = 0
+        self.chk_select_ipa["variable"] = self.select_ipa
+        self.chk_select_ipa.select()
+        current_y += delta_y
+
+        self.select_symbols= tk.IntVar()
+        self.chk_select_symbols = tk.Checkbutton(self._window_root)
+        self.chk_select_symbols["font"] = ft
+        self.chk_select_symbols["justify"] = "left"
+        self.chk_select_symbols["text"] = "Symbols 0x2190-0x23FF & 0x2600-0x27BF"
+        self.chk_select_symbols.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_symbols["onvalue"] = 1
+        self.chk_select_symbols["offvalue"] = 0
+        self.chk_select_symbols["variable"] = self.select_symbols
+        self.chk_select_symbols.select()
+        current_y += delta_y
+
+        self.select_add_lang = tk.IntVar()
+        self.chk_select_lang = tk.Checkbutton(self._window_root)
+        self.chk_select_lang["font"] = ft
+        self.chk_select_lang["justify"] = "left"
+        self.chk_select_lang["text"] = "Lang 0x0370-0x077F & 0x4E00-0x9FFF"
+        self.chk_select_lang.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_lang["onvalue"] = 1
+        self.chk_select_lang["offvalue"] = 0
+        self.chk_select_lang["variable"] = self.select_add_lang
+        self.chk_select_lang.select()
         current_y += delta_y
 
         self._log.debug("ui ready")
@@ -444,9 +507,38 @@ class Type2NC_UI:
             tkmb.showwarning(parent=self._window_root, title="Missing parameter", message="No step size selected")
             self._log.debug("no step size selected selected!")
             return
+        
+        character_list = list()
+        if self.select_basics.get() > 0:
+            character_list.extend(list(range(0x0020, 0x007E + 1))) # BASIC_LATIN
+            character_list.extend(list(range(0x0080, 0x00FF + 1))) # C1_CTRL_AND_LATIN1_SUPPLEMENT
+
+        if self.select_punctuation.get() > 0:
+            character_list.extend(list(range(0x2000, 0x206F + 1))) # GENERAL_PUNCTUATION
+
+        if self.select_ipa.get() > 0:
+            character_list.extend(list(range(0x0250, 0x02AF + 1))) # IPA_EEXTENTIONS
+
+        if self.select_symbols.get() > 0:
+            character_list.extend(list(range(0x2190, 0x21FF + 1))) # ARROW_CHARS
+            character_list.extend(list(range(0x2200, 0x22FF + 1))) # MATHEMATICAL_CHARS
+            character_list.extend(list(range(0x2300, 0x23FF + 1))) # MISC_TECH_CHARS
+            character_list.extend(list(range(0x2600, 0x26FF + 1))) # MISC_SYMBOLS
+            character_list.extend(list(range(0x2700, 0x27BF + 1))) # DINGBATS
+
+        if self.select_add_lang.get() > 0:
+            character_list.extend(list(range(0x0370, 0x03FF + 1))) # GREEK_AND_COPTIC_CHARS
+            character_list.extend(list(range(0x0400, 0x04FF + 1))) # CYRILLIC_CHARS
+            character_list.extend(list(range(0x0500, 0x052F + 1))) # CYRILLIC_SUPPLEMENT_CHARS
+            character_list.extend(list(range(0x0530, 0x058F + 1))) # ARMENIAN_CHARS
+            character_list.extend(list(range(0x0590, 0x05FF + 1))) # HEBREW_CHARS
+            character_list.extend(list(range(0x0600, 0x06FF + 1))) # ARABIC_CHARS
+            character_list.extend(list(range(0x0700, 0x074F + 1))) # SYRIAC_CHARS
+            character_list.extend(list(range(0x0750, 0x077F + 1))) # ARABIC_SUPPLEMENT_CHARS
+            character_list.extend(list(range(0x4E00, 0x9FFF + 1))) # CJK_UNIFIED_IDEOGRAPHS_PART
 
         self.pb_progress['value'] = 0
-        conv = Type2NC(output_folder=self.output_path, target_height=10, step_size=self.step_size)
+        conv = Type2NC(output_folder=self.output_path, target_height=10, step_size=self.step_size, unicode_numbers=character_list)
         self._log.debug("start processing %d font files", len(self.selected_font_files))
         for i, ff in enumerate(self.selected_font_files):
             if ff.is_file():
