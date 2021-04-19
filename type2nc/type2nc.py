@@ -302,8 +302,15 @@ class Type2NC_UI:
     def __init__(self, root):
         self._log = logging.getLogger("Type2NCUI")
         self._log.debug("start building tk ui")
+
+        for lang in ['en', 'de']:
+            lang_translations = gettext.translation('messages', localedir='locales', languages=[lang])
+            lang_translations.install()
+        
+        self.gt_ = lang_translations.gettext
+
         self._window_root = root
-        root.title("type2nc")
+        root.title("Type2NC UI")
         width=650
         height=260
         screenwidth = root.winfo_screenwidth()
@@ -321,7 +328,7 @@ class Type2NC_UI:
         self.btn_select_font = tk.Button(self._window_root)
         self.btn_select_font["font"] = ft
         self.btn_select_font["justify"] = "center"
-        self.btn_select_font["text"] = "Select Font File"
+        self.btn_select_font["text"] = self.gt_("Select Font File")
         self.btn_select_font.place(x=20, y=current_y, width=160, height=component_height)
         self.btn_select_font["command"] = self.btn_select_font_command
 
@@ -335,7 +342,7 @@ class Type2NC_UI:
         self.btn_select_folder = tk.Button(self._window_root)
         self.btn_select_folder["font"] = ft
         self.btn_select_folder["justify"] = "center"
-        self.btn_select_folder["text"] = "Select Destination Folder"
+        self.btn_select_folder["text"] = self.gt_("Select Destination Folder")
         self.btn_select_folder.place(x=20, y=current_y, width=160, height=component_height)
         self.btn_select_folder["command"] = self.btn_select_folder_command
 
@@ -349,7 +356,7 @@ class Type2NC_UI:
         self.btn_select_step = tk.Button(self._window_root)
         self.btn_select_step["font"] = ft
         self.btn_select_step["justify"] = "center"
-        self.btn_select_step["text"] = "Select Step Size"
+        self.btn_select_step["text"] = self.gt_("Select Step Size")
         self.btn_select_step.place(x=20, y=current_y, width=160, height=component_height)
         self.btn_select_step["command"] = self.btn_select_step_command
 
@@ -364,7 +371,7 @@ class Type2NC_UI:
         self.chk_generate_demos = tk.Checkbutton(self._window_root)
         self.chk_generate_demos["font"] = ft
         self.chk_generate_demos["justify"] = "left"
-        self.chk_generate_demos["text"] = "Create Demo Files"
+        self.chk_generate_demos["text"] = self.gt_("Create Demo Files")
         self.chk_generate_demos.place(x=20, y=current_y, width=150, height=component_height)
         self.chk_generate_demos["onvalue"] = 1
         self.chk_generate_demos["offvalue"] = 0
@@ -375,7 +382,7 @@ class Type2NC_UI:
         self.btn_generate_nc = tk.Button(self._window_root)
         self.btn_generate_nc["font"] = ft
         self.btn_generate_nc["justify"] = "center"
-        self.btn_generate_nc["text"] = "Generate"
+        self.btn_generate_nc["text"] = self.gt_("Generate")
         self.btn_generate_nc.place(x=140, y=current_y, width=150, height=component_height)
         self.btn_generate_nc["command"] = self.btn_generate_nc_command
         current_y += delta_y
@@ -392,7 +399,7 @@ class Type2NC_UI:
         self.chk_select_basic = tk.Checkbutton(self._window_root)
         self.chk_select_basic["font"] = ft
         self.chk_select_basic["justify"] = "left"
-        self.chk_select_basic["text"] = "ASCII 0x20-0x7E and Latin1 0x80-0xFF"
+        self.chk_select_basic["text"] = self.gt_("ASCII 0x20-0x7E and Latin1 0x80-0xFF")
         self.chk_select_basic.place(x=390, y=current_y, width=240, height=component_height)
         self.chk_select_basic["onvalue"] = 1
         self.chk_select_basic["offvalue"] = 0
@@ -404,7 +411,7 @@ class Type2NC_UI:
         self.chk_select_punctuation = tk.Checkbutton(self._window_root)
         self.chk_select_punctuation["font"] = ft
         self.chk_select_punctuation["justify"] = "left"
-        self.chk_select_punctuation["text"] = "General Punctuation 0x2000-0x206F"
+        self.chk_select_punctuation["text"] = self.gt_("General Punctuation 0x2000-0x206F")
         self.chk_select_punctuation.place(x=390, y=current_y, width=240, height=component_height)
         self.chk_select_punctuation["onvalue"] = 1
         self.chk_select_punctuation["offvalue"] = 0
@@ -416,7 +423,7 @@ class Type2NC_UI:
         self.chk_select_ipa = tk.Checkbutton(self._window_root)
         self.chk_select_ipa["font"] = ft
         self.chk_select_ipa["justify"] = "left"
-        self.chk_select_ipa["text"] = "IPA Extention 0x0250-0x02AF"
+        self.chk_select_ipa["text"] = self.gt_("IPA Extention 0x0250-0x02AF")
         self.chk_select_ipa.place(x=390, y=current_y, width=240, height=component_height)
         self.chk_select_ipa["onvalue"] = 1
         self.chk_select_ipa["offvalue"] = 0
@@ -428,7 +435,7 @@ class Type2NC_UI:
         self.chk_select_symbols = tk.Checkbutton(self._window_root)
         self.chk_select_symbols["font"] = ft
         self.chk_select_symbols["justify"] = "left"
-        self.chk_select_symbols["text"] = "Symbols 0x2190-0x23FF & 0x2600-0x27BF"
+        self.chk_select_symbols["text"] = self.gt_("Symbols 0x2190-0x23FF & 0x2600-0x27BF")
         self.chk_select_symbols.place(x=390, y=current_y, width=240, height=component_height)
         self.chk_select_symbols["onvalue"] = 1
         self.chk_select_symbols["offvalue"] = 0
@@ -440,7 +447,7 @@ class Type2NC_UI:
         self.chk_select_lang = tk.Checkbutton(self._window_root)
         self.chk_select_lang["font"] = ft
         self.chk_select_lang["justify"] = "left"
-        self.chk_select_lang["text"] = "Lang 0x0370-0x077F & 0x4E00-0x9FFF"
+        self.chk_select_lang["text"] = self.gt_("Lang 0x0370-0x077F & 0x4E00-0x9FFF")
         self.chk_select_lang.place(x=390, y=current_y, width=240, height=component_height)
         self.chk_select_lang["onvalue"] = 1
         self.chk_select_lang["offvalue"] = 0
@@ -456,8 +463,10 @@ class Type2NC_UI:
 
     def btn_select_font_command(self):
         self._log.debug("select font button pressed")
+        
+
         file_types = [('Font', '*.ttf *.tte *.ttc *.otf *.dfont *.pfb')]
-        font_file_list = tkfd.askopenfilename(parent=self._window_root, title="Select Font file", filetypes=file_types, multiple=1)
+        font_file_list = tkfd.askopenfilename(parent=self._window_root, title=self.gt_("Select Font File"), filetypes=file_types, multiple=1)
         for path in font_file_list:
             self.selected_font_files.append(pathlib.Path(path))
 
@@ -465,17 +474,19 @@ class Type2NC_UI:
             self.lbl_font_filename["text"] = str(self.selected_font_files[0].name)
             self._log.debug("No font file selected")
         else:
-            self.lbl_font_filename["text"] = "%d files selected" % len(self.selected_font_files)
+            self.lbl_font_filename["text"] = self.gt_("%d files selected") % len(self.selected_font_files)
             self._log.debug("Add %d fonts to list: %s", len(font_file_list), font_file_list)
 
     def btn_select_folder_command(self):
         self._log.debug("select output folder button pressed")
-        selected_folder = tkfd.askdirectory(parent=self._window_root, title="Select destination folder")
+        
+
+        selected_folder = tkfd.askdirectory(parent=self._window_root, title=self.gt_("Select Destination Folder"))
         self.output_path = pathlib.Path(selected_folder)
 
         if not self.output_path.is_dir():
             self.output_path = None
-            self.lbl_output_path["text"] = "No folder selected"
+            self.lbl_output_path["text"] = self.gt_("No folder selected")
             self._log.debug("No folder selected")
         else:
             self.lbl_output_path["text"] = self.output_path.name
@@ -483,10 +494,12 @@ class Type2NC_UI:
 
     def btn_select_step_command(self):
         self._log.debug("select step size button pressed")
-        selected_step = tksd.askfloat(parent=self._window_root, title="Step Size", prompt="Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting Splines", initialvalue=0.05, minvalue=0.001, maxvalue=0.2)
+        
+
+        selected_step = tksd.askfloat(parent=self._window_root, title=self.gt_("Step Size"), prompt=self.gt_("Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting Splines"), initialvalue=0.05, minvalue=0.001, maxvalue=0.2)
         if selected_step is None:
             self.step_size = None
-            self.lbl_step_size["text"] = "No step size selected"
+            self.lbl_step_size["text"] = self.gt_("No step size selected")
             self._log.debug("No step size selected")
         else:
             self.step_size = selected_step
@@ -495,16 +508,18 @@ class Type2NC_UI:
 
     def btn_generate_nc_command(self):
         self._log.debug("generate nc files button pressed")
+        
+
         if len(self.selected_font_files) == 0:
-            tkmb.showwarning(parent=self._window_root, title="Missing parameter", message="No font files selected")
+            tkmb.showwarning(parent=self._window_root, title=self.gt_("Missing parameter"), message=self.gt_("No font files selected"))
             self._log.debug("list of selected font files is empty!")
             return
         if self.output_path is None:
-            tkmb.showwarning(parent=self._window_root, title="Missing parameter", message="No output folder selected")
+            tkmb.showwarning(parent=self._window_root, title=self.gt_("Missing parameter"), message=self.gt_("No output folder selected"))
             self._log.debug("no output path selected!")
             return
         if self.step_size is None:
-            tkmb.showwarning(parent=self._window_root, title="Missing parameter", message="No step size selected")
+            tkmb.showwarning(parent=self._window_root, title=self.gt_("Missing parameter"), message=-("No step size selected"))
             self._log.debug("no step size selected selected!")
             return
         
@@ -550,7 +565,7 @@ class Type2NC_UI:
             self._log.debug("generating demo files is enabled")
             conv.generate_demo_files(self.selected_font_files)
 
-        tkmb.showinfo(parent=self._window_root, title="Finished", message="Finished processing all font files")
+        tkmb.showinfo(parent=self._window_root, title=self.gt_("Finished"), message=self.gt_("Finished processing all font files"))
 
         self.lbl_font_filename["text"] = " "
         del self.selected_font_files[:]
@@ -587,6 +602,7 @@ if __name__ == "__main__":
         import tkinter as tk
         import tkinter.ttk as ttk
         import tkinter.font as tkFont
+        import gettext
         root = tk.Tk()
         app = Type2NC_UI(root)
         root.mainloop()

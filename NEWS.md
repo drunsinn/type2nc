@@ -1,4 +1,8 @@
 
+# Release notes for 0.6.1
+  - add translation support for ui
+  - add german translation
+
 # Release notes for 0.6.0
   - this release is a complete rewrite!
     - much cleaner code for better readability in a more 'pythonic' way
