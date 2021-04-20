@@ -28,7 +28,7 @@ class Point():
 
 class Type2NC(object):
 
-    def __init__(self, output_folder, target_height, step_size, unicode_numbers=None):
+    def __init__(self, output_folder, target_height, step_size, unicode_numbers=None, create_empty_lables=False):
         self._log = logging.getLogger("Type2NC")
         self.__output_folder = output_folder.resolve(strict=True)
         self.__target_height = target_height
@@ -58,6 +58,8 @@ class Type2NC(object):
             self.__characters.extend(list(range(0x4E00, 0x9FFF + 1))) # CJK_UNIFIED_IDEOGRAPHS_PART
         else:
             self.__characters.extend(unicode_numbers)
+        
+        self.__create_empty_lables = create_empty_lables
         
         self._log.debug("using folder '%s', step size '%f'", self.__output_folder, self.__step_size)
     
@@ -167,7 +169,11 @@ class Type2NC(object):
                     ncfp.writelines(self._creat_font_label(chr(char_code), contour_paths, x_advance, scale_factor))
                     
                 else:
-                    self._log.debug("character '%s' was selected but is not available, skipping", chr(char_code))
+                    if self.__create_empty_lables:
+                        self._log.debug("character '%s' was selected but is not available, add empty label", chr(char_code))
+                        ncfp.writelines(self._create_empty_font_label(chr(char_code)), x_advance=0)
+                    else:
+                        self._log.debug("character '%s' was selected but is not available, skipping", chr(char_code))
 
             with open(pathlib.Path.cwd().joinpath("templates", "pgm_foot_template.H")) as template_file:
                     ncfp.writelines(template_file)
@@ -229,6 +235,16 @@ class Type2NC(object):
         if label_name is not None: char_lines.append("LBL \"{0:s}_X-Advance\"\n".format(label_name))
         char_lines.append("LBL \"0x{0:04x}_X-Advance\"\n".format(ord(char_str)))
         char_lines.append("QL20 = {0:+f} ; X-Advance\n".format(x_advance * scale_factor))
+        char_lines.append("LBL 0\n;\n")
+        return char_lines
+
+    def _create_empty_font_label(self, char_str, x_advance):
+        self._log.debug("created label for empty char %s", char_str)
+        char_lines = list()
+        char_lines.append("* -   Unicode Hex:0x{0:04x}\n".format(ord(char_str)))
+        char_lines.append("LBL \"0x{0:04x}\"\n".format(ord(char_str)))
+        char_lines.append("LBL \"0x{0:04x}_X-Advance\"\n".format(ord(char_str)))
+        char_lines.append("QL20 = {0:+f} ; X-Advance\n".format(x_advance))
         char_lines.append("LBL 0\n;\n")
         return char_lines
 
@@ -384,6 +400,18 @@ class Type2NC_UI:
         self.chk_generate_demos["offvalue"] = 0
         self.chk_generate_demos["variable"] = self.gen_demo_files
         self.chk_generate_demos.select()
+        current_y += delta_y
+
+        self.include_empty_lbl = tk.IntVar()
+        self.chk_empty_lbl = tk.Checkbutton(self._window_root)
+        self.chk_empty_lbl["font"] = ft
+        self.chk_empty_lbl["justify"] = "left"
+        self.chk_empty_lbl["text"] = self.gt_("Include Empty Label")
+        self.chk_empty_lbl.place(x=20, y=current_y, width=150, height=component_height)
+        self.chk_empty_lbl["onvalue"] = 1
+        self.chk_empty_lbl["offvalue"] = 0
+        self.chk_empty_lbl["variable"] = self.include_empty_lbl
+        self.chk_empty_lbl.select()
         current_y += delta_y
 
         self.btn_generate_nc = tk.Button(self._window_root)
@@ -561,7 +589,12 @@ class Type2NC_UI:
             character_list.extend(list(range(0x4E00, 0x9FFF + 1))) # CJK_UNIFIED_IDEOGRAPHS_PART
 
         self.pb_progress['value'] = 0
-        conv = Type2NC(output_folder=self.output_path, target_height=10, step_size=self.step_size, unicode_numbers=character_list)
+
+        include_empty = False
+        if self.include_empty_lbl.get() > 0:
+            include_empty = True
+
+        conv = Type2NC(output_folder=self.output_path, target_height=10, step_size=self.step_size, unicode_numbers=character_list, create_empty_lables=include_empty)
         self._log.debug("start processing %d font files", len(self.selected_font_files))
         for i, ff in enumerate(self.selected_font_files):
             if ff.is_file():
@@ -589,6 +622,8 @@ if __name__ == "__main__":
     cmdl_parser.add_argument("-o", "--output", metavar="output folder", type=pathlib.Path, help="path to the output folder where klartext files are generated")
     cmdl_parser.add_argument("-s", "--step_size", metavar="step size", type=float, default=0.05, required=False, help="step size for converting curves to line segmenst: between 0.001 (very fine) and 0.2 (very coarse)")
     cmdl_parser.add_argument("-d", "--create_demos", action="store_true", default=False, required=False, help="if set, demo output will use cycle 225 for definition of parameters")
+    cmdl_parser.add_argument("-e", "--create_empty_lable", action="store_true", default=False, required=False, help="if set, create lable for each selected character, even if it is not defined in the font. Stops errors because of missing lable definiton")
+    
     arguments = cmdl_parser.parse_args()
 
     if arguments.input is not None:

@@ -33,6 +33,10 @@ msgstr "Schrittweite"
 msgid "Create Demo Files"
 msgstr "Demo-Datei erstellen"
 
+#: type2nc.py:409
+msgid "Include Empty Label"
+msgstr "Leere LBL DEF erstellen"
+
 #: type2nc.py:380
 msgid "Generate"
 msgstr "Erstellen"

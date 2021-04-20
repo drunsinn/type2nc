@@ -33,6 +33,10 @@ msgstr "Select Step Size"
 msgid "Create Demo Files"
 msgstr "Create Demo Files"
 
+#: type2nc.py:409
+msgid "Include Empty Label"
+msgstr "Include Empty Label"
+
 #: type2nc.py:380
 msgid "Generate"
 msgstr "Generate"
