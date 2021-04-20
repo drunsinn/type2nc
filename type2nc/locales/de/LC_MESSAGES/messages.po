@@ -50,8 +50,8 @@ msgid "General Punctuation 0x2000-0x206F"
 msgstr "Allgemeine Satzzeichen 0x2000-0x206F"
 
 #: type2nc.py:421
-msgid "IPA Extention 0x0250-0x02AF"
-msgstr "IPA Extention 0x0250-0x02AF"
+msgid "IPA Extension 0x0250-0x02AF"
+msgstr "IPA Extension 0x0250-0x02AF"
 
 #: type2nc.py:433
 msgid "Symbols 0x2190-0x23FF & 0x2600-0x27BF"

@@ -28,7 +28,7 @@ class Point():
 
 class Type2NC(object):
 
-    def __init__(self, output_folder, target_height, step_size, unicode_numbers=None, create_empty_lables=False):
+    def __init__(self, output_folder, target_height, step_size, unicode_numbers=None, create_empty_labels=False):
         self._log = logging.getLogger("Type2NC")
         self.__output_folder = output_folder.resolve(strict=True)
         self.__target_height = target_height
@@ -59,7 +59,7 @@ class Type2NC(object):
         else:
             self.__characters.extend(unicode_numbers)
         
-        self.__create_empty_lables = create_empty_lables
+        self.__create_empty_labels = create_empty_labels
         
         self._log.debug("using folder '%s', step size '%f'", self.__output_folder, self.__step_size)
     
@@ -102,7 +102,12 @@ class Type2NC(object):
                     try:
                         font_face.load_char(chr(char_code))
                     except freetype.ft_errors.FT_Exception as e:
-                        self._log.error("character '%s' at index %d could not be loaded, skip. Error: %s", chr(char_code), char_index, e)
+                        if self.__create_empty_labels:
+                            self._log.error("character '%s' at index %d could not be loaded, replace with empty label. Error: %s", chr(char_code), char_index, e)
+                            self._log.debug("character '%s' was selected but is not available, add empty label", chr(char_code))
+                            ncfp.writelines(self._create_empty_font_label(chr(char_code), x_advance=0))
+                        else:
+                            self._log.error("character '%s' at index %d could not be loaded, skip. Error: %s", chr(char_code), char_index, e)
                         break
 
                     c_glyph_slot = font_face.glyph
@@ -169,9 +174,9 @@ class Type2NC(object):
                     ncfp.writelines(self._creat_font_label(chr(char_code), contour_paths, x_advance, scale_factor))
                     
                 else:
-                    if self.__create_empty_lables:
+                    if self.__create_empty_labels:
                         self._log.debug("character '%s' was selected but is not available, add empty label", chr(char_code))
-                        ncfp.writelines(self._create_empty_font_label(chr(char_code)), x_advance=0)
+                        ncfp.writelines(self._create_empty_font_label(chr(char_code), x_advance=0))
                     else:
                         self._log.debug("character '%s' was selected but is not available, skipping", chr(char_code))
 
@@ -460,7 +465,7 @@ class Type2NC_UI:
         self.chk_select_ipa = tk.Checkbutton(self._window_root)
         self.chk_select_ipa["font"] = ft
         self.chk_select_ipa["justify"] = "left"
-        self.chk_select_ipa["text"] = self.gt_("IPA Extention 0x0250-0x02AF")
+        self.chk_select_ipa["text"] = self.gt_("IPA Extension 0x0250-0x02AF")
         self.chk_select_ipa["anchor"] = "w"
         self.chk_select_ipa.place(x=390, y=current_y, width=260, height=component_height)
         self.chk_select_ipa["onvalue"] = 1
@@ -594,7 +599,7 @@ class Type2NC_UI:
         if self.include_empty_lbl.get() > 0:
             include_empty = True
 
-        conv = Type2NC(output_folder=self.output_path, target_height=10, step_size=self.step_size, unicode_numbers=character_list, create_empty_lables=include_empty)
+        conv = Type2NC(output_folder=self.output_path, target_height=10, step_size=self.step_size, unicode_numbers=character_list, create_empty_labels=include_empty)
         self._log.debug("start processing %d font files", len(self.selected_font_files))
         for i, ff in enumerate(self.selected_font_files):
             if ff.is_file():
@@ -622,7 +627,7 @@ if __name__ == "__main__":
     cmdl_parser.add_argument("-o", "--output", metavar="output folder", type=pathlib.Path, help="path to the output folder where klartext files are generated")
     cmdl_parser.add_argument("-s", "--step_size", metavar="step size", type=float, default=0.05, required=False, help="step size for converting curves to line segmenst: between 0.001 (very fine) and 0.2 (very coarse)")
     cmdl_parser.add_argument("-d", "--create_demos", action="store_true", default=False, required=False, help="if set, demo output will use cycle 225 for definition of parameters")
-    cmdl_parser.add_argument("-e", "--create_empty_lable", action="store_true", default=False, required=False, help="if set, create lable for each selected character, even if it is not defined in the font. Stops errors because of missing lable definiton")
+    cmdl_parser.add_argument("-e", "--create_empty_label", action="store_true", default=False, required=False, help="if set, create label for each selected character, even if it is not defined in the font. Stops errors because of missing label definition")
     
     arguments = cmdl_parser.parse_args()
 
