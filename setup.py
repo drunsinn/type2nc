@@ -3,25 +3,25 @@
 import setuptools
 from type2nc import __version__
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
-
 setuptools.setup(
     name="type2nc",
     version=__version__,
     author="drunsinn et al.",
+    license='MIT',
     author_email="dr.unsinn@googlemail.com",
     description="convert truetype fonts to klartext nc-code",
-    long_description=long_description,
+    long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/drunsinn/type2nc",
     packages=setuptools.find_packages(exclude=['tests',
                                                'tests.*']),
-    package_data={'': ['templates/demo_pgm_template_cycle.H',
+    package_data={'type2nc': ['templates/demo_pgm_template_cycle.H',
                        'templates/demo_pgm_template_conventional.H',
                        'templates/pgm_foot_template.H',
-                       'templates/pgm_head_template.H']},
-    # include_package_data=True,
+                       'templates/pgm_head_template.H',
+                       'locales/en/LC_MESSAGES/*.mo',
+                       'locales/de/LC_MESSAGES/*.mo']},
+    keywords="cnc klartext font freetype",
     classifiers=(
         "Programming Language :: Python :: 3",
         "Development Status :: 4 - Beta",
