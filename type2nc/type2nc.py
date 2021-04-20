@@ -67,8 +67,12 @@ class Type2NC(object):
         font_face = freetype.Face(str(font_file.resolve(strict=True)))
         self._log.info("Font: %s, Style: %s, Format: %s", font_face.family_name.decode("utf-8"), font_face.style_name.decode("utf-8"), font_face.get_format().decode("utf-8"))
         #font_face.set_char_size(height=self.__char_size)
-        font_face.set_char_size(height=self.__char_size_pt * self.__char_size_dpi, hres=self.__char_size_dpi, vres=self.__char_size_dpi)
-        
+        try:
+            font_face.set_char_size(height=self.__char_size_pt * self.__char_size_dpi, hres=self.__char_size_dpi, vres=self.__char_size_dpi)
+        except freetype.ft_errors.FT_Exception as e:
+            self._log.error("Error while setting size for font %s %s : %s", font_face.family_name.decode("utf-8"), font_face.style_name.decode("utf-8"), e)
+            return        
+
         self._log.info("Font BBox (min:max) X:(%d:%d) Y:(%d:%d)", font_face.bbox.xMax, font_face.bbox.xMin, font_face.bbox.yMax, font_face.bbox.yMin)
         scale_factor = self.__target_height / (abs(font_face.bbox.yMax) + abs(font_face.bbox.yMin))
         self._log.info("set scaling factor to %f", scale_factor)
@@ -311,7 +315,7 @@ class Type2NC_UI:
 
         self._window_root = root
         root.title("Type2NC UI")
-        width=650
+        width=670
         height=260
         screenwidth = root.winfo_screenwidth()
         screenheight = root.winfo_screenheight()
@@ -336,6 +340,7 @@ class Type2NC_UI:
         self.lbl_font_filename["font"] = ft
         self.lbl_font_filename["justify"] = "center"
         self.lbl_font_filename["text"] = " "
+        self.lbl_font_filename["anchor"] = "w"
         self.lbl_font_filename.place(x=200, y=current_y, width=180, height=component_height)
         current_y += delta_y
 
@@ -350,6 +355,7 @@ class Type2NC_UI:
         self.lbl_output_path["font"] = ft
         self.lbl_output_path["justify"] = "center"
         self.lbl_output_path["text"] = " "
+        self.lbl_output_path["anchor"] = "w"
         self.lbl_output_path.place(x=200, y=current_y, width=180, height=component_height)
         current_y += delta_y
 
@@ -364,6 +370,7 @@ class Type2NC_UI:
         self.lbl_step_size["font"] = ft
         self.lbl_step_size["justify"] = "center"
         self.lbl_step_size["text"] = " "
+        self.lbl_step_size["anchor"] = "w"
         self.lbl_step_size.place(x=200, y=current_y, width=180, height=component_height)
         current_y += delta_y
 
@@ -400,7 +407,8 @@ class Type2NC_UI:
         self.chk_select_basic["font"] = ft
         self.chk_select_basic["justify"] = "left"
         self.chk_select_basic["text"] = self.gt_("ASCII 0x20-0x7E and Latin1 0x80-0xFF")
-        self.chk_select_basic.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_basic["anchor"] = "w"
+        self.chk_select_basic.place(x=390, y=current_y, width=260, height=component_height)
         self.chk_select_basic["onvalue"] = 1
         self.chk_select_basic["offvalue"] = 0
         self.chk_select_basic["variable"] = self.select_basics
@@ -412,7 +420,8 @@ class Type2NC_UI:
         self.chk_select_punctuation["font"] = ft
         self.chk_select_punctuation["justify"] = "left"
         self.chk_select_punctuation["text"] = self.gt_("General Punctuation 0x2000-0x206F")
-        self.chk_select_punctuation.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_punctuation["anchor"] = "w"
+        self.chk_select_punctuation.place(x=390, y=current_y, width=260, height=component_height)
         self.chk_select_punctuation["onvalue"] = 1
         self.chk_select_punctuation["offvalue"] = 0
         self.chk_select_punctuation["variable"] = self.select_punctuation
@@ -424,7 +433,8 @@ class Type2NC_UI:
         self.chk_select_ipa["font"] = ft
         self.chk_select_ipa["justify"] = "left"
         self.chk_select_ipa["text"] = self.gt_("IPA Extention 0x0250-0x02AF")
-        self.chk_select_ipa.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_ipa["anchor"] = "w"
+        self.chk_select_ipa.place(x=390, y=current_y, width=260, height=component_height)
         self.chk_select_ipa["onvalue"] = 1
         self.chk_select_ipa["offvalue"] = 0
         self.chk_select_ipa["variable"] = self.select_ipa
@@ -436,7 +446,8 @@ class Type2NC_UI:
         self.chk_select_symbols["font"] = ft
         self.chk_select_symbols["justify"] = "left"
         self.chk_select_symbols["text"] = self.gt_("Symbols 0x2190-0x23FF & 0x2600-0x27BF")
-        self.chk_select_symbols.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_symbols["anchor"] = "w"
+        self.chk_select_symbols.place(x=390, y=current_y, width=260, height=component_height)
         self.chk_select_symbols["onvalue"] = 1
         self.chk_select_symbols["offvalue"] = 0
         self.chk_select_symbols["variable"] = self.select_symbols
@@ -448,7 +459,8 @@ class Type2NC_UI:
         self.chk_select_lang["font"] = ft
         self.chk_select_lang["justify"] = "left"
         self.chk_select_lang["text"] = self.gt_("Lang 0x0370-0x077F & 0x4E00-0x9FFF")
-        self.chk_select_lang.place(x=390, y=current_y, width=240, height=component_height)
+        self.chk_select_lang["anchor"] = "w"
+        self.chk_select_lang.place(x=390, y=current_y, width=260, height=component_height)
         self.chk_select_lang["onvalue"] = 1
         self.chk_select_lang["offvalue"] = 0
         self.chk_select_lang["variable"] = self.select_add_lang
@@ -464,7 +476,6 @@ class Type2NC_UI:
     def btn_select_font_command(self):
         self._log.debug("select font button pressed")
         
-
         file_types = [('Font', '*.ttf *.tte *.ttc *.otf *.dfont *.pfb')]
         font_file_list = tkfd.askopenfilename(parent=self._window_root, title=self.gt_("Select Font File"), filetypes=file_types, multiple=1)
         for path in font_file_list:
@@ -480,7 +491,6 @@ class Type2NC_UI:
     def btn_select_folder_command(self):
         self._log.debug("select output folder button pressed")
         
-
         selected_folder = tkfd.askdirectory(parent=self._window_root, title=self.gt_("Select Destination Folder"))
         self.output_path = pathlib.Path(selected_folder)
 
@@ -495,7 +505,6 @@ class Type2NC_UI:
     def btn_select_step_command(self):
         self._log.debug("select step size button pressed")
         
-
         selected_step = tksd.askfloat(parent=self._window_root, title=self.gt_("Step Size"), prompt=self.gt_("Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting Splines"), initialvalue=0.05, minvalue=0.001, maxvalue=0.2)
         if selected_step is None:
             self.step_size = None
@@ -509,7 +518,6 @@ class Type2NC_UI:
     def btn_generate_nc_command(self):
         self._log.debug("generate nc files button pressed")
         
-
         if len(self.selected_font_files) == 0:
             tkmb.showwarning(parent=self._window_root, title=self.gt_("Missing parameter"), message=self.gt_("No font files selected"))
             self._log.debug("list of selected font files is empty!")
