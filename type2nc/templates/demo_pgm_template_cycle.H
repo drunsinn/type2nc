@@ -12,14 +12,6 @@ QS10 = " ABC abc 123 !%& "
 ;QS10 = QS10 || "%0x0645%0x0631%0x062d%0x0628%0x0627 "
 ;QS10 = QS10 || "%0x0628%0x0627%0x0644%0x0639%0x0627%0x0644%0x0645 "
 ;
-;
-Q1600 = 0 ;surface in Z
-Q1601 = - 0.5 ;depth
-Q1602 = 5 ;safe height
-Q1605 = 6000 ;feedrate
-Q1606 = 10 ;aprox. font height
-Q1607 = 5 ;angle
-;
 CYCL DEF 225 GRAVIEREN ~
   QS500= QS10    ;GRAVIERTEXT ~
   Q513=+10   ;ZEICHENHOEHE ~
