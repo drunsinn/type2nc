@@ -1,3 +1,7 @@
+# Release notes for 0.6.2
+  - improve ui for windows
+  - include translation files in package
+  - add option to create empty label
 
 # Release notes for 0.6.1
   - add translation support for ui
