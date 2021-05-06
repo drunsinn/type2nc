@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-@author: drunsinn, TobFleischi, Klartext
+@author: drunsinn, TobFleischi, Klartext and GuggiJr
 '''
 
 import datetime

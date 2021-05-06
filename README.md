@@ -10,7 +10,7 @@ the engraving cycle 225 with QS-parameters.
 ![Path details](/screenshots/screen_3.png?raw=true "Path details")
 
 ## Contributors
-drunsinn, TobFleischi and Klartext
+drunsinn, TobFleischi, Klartext and GuggiJr
 
 ### Forum
 German: [Industry Arena](https://de.industryarena.com/heidenhain/forum/gravieren-von-text-in-anderen-sprachen-ohne-cam--83908.html)
