@@ -193,7 +193,7 @@ class Type2NC(object):
         hshf = HersheyFonts()
         hshf.load_font_file(font_file)
         #hshf.load_default_font('gothiceng')
-        hshf.normalize_rendering(self.__target_height)
+        hshf.normalize_rendering(self.__target_height * 0.8)
 
         nc_file_name = font_file.name.replace(font_file.suffix, '.H')
         nc_file_name = nc_file_name.replace(' ', '_')
@@ -228,9 +228,9 @@ class Type2NC(object):
                     for stroke in glyph.strokes:
                         path_points = list()
                         for c_pair in stroke:
-                            #x = (0 + (c_pair[0] - glyph.left_offset) *  1.0
-                            #y = 0 + c_pair[1] * 1.0
-                            path_points.append(Point(x=c_pair[0] - glyph.left_offset, y=c_pair[1]))
+                            x_coor = c_pair[0] - glyph.left_offset
+                            y_coor = -1 * c_pair[1]
+                            path_points.append(Point(x=x_coor, y=y_coor))
                         contour_paths.append(path_points)
                     self._log.debug("created %d paths for character", len(contour_paths))
                     
