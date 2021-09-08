@@ -11,6 +11,7 @@
             "args": [
                 "-i", "${workspaceFolder}/temp/plt/*.hpgl",
                 "-o", "${workspaceFolder}/temp/"
+            ]
         }
     ]
 }
