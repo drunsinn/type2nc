@@ -698,9 +698,12 @@ class Type2NC_UI:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger('main')
-    logger.debug("startup")
+    logger.info("startup")
+    log_level_map = {'critical': logging.CRITICAL, 'error': logging.ERROR,
+                     'warn': logging.WARNING, 'warning': logging.WARNING,
+                     'info': logging.INFO, 'debug': logging.DEBUG}
 
     cmdl_parser = argparse.ArgumentParser(description="Create Klartext NC code from font files. If no options are given, start gui")
     cmdl_parser.add_argument("-i", "--input", metavar="font input file", nargs='+', type=pathlib.Path, help="path of one or more font files")
@@ -708,8 +711,15 @@ if __name__ == "__main__":
     cmdl_parser.add_argument("-s", "--step_size", metavar="step size", type=float, default=0.05, required=False, help="step size for converting curves to line segmenst: between 0.001 (very fine) and 0.2 (very coarse)")
     cmdl_parser.add_argument("-d", "--create_demos", action="store_true", default=False, required=False, help="if set, demo output will use cycle 225 for definition of parameters")
     cmdl_parser.add_argument("-e", "--create_empty_label", action="store_true", default=False, required=False, help="if set, create label for each selected character, even if it is not defined in the font. Stops errors because of missing label definition")
-    
+    cmdl_parser.add_argument("-l", "--log", metavar="logging level", default="warning", help="set logging level to critical, error, warn/warning, info or debug. Default is info")
+
     arguments = cmdl_parser.parse_args()
+
+    selected_level = log_level_map.get(arguments.log.lower())
+
+    if selected_level is None:
+        raise Exception("the given log level {:s} cant be mapped to an existing log level. It must be one of critical, error, warn/warning, info or debug")
+    logging.basicConfig(level=selected_level)
 
     if arguments.input is not None:
         if not arguments.output.is_dir():
