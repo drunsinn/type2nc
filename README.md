@@ -77,7 +77,7 @@ installed. For Windows, follow the instructions on  [this github repo](https://g
     - <https://www.theleagueofmoveabletype.com/>
 
     The library for reading Hershey Fonts comes bundled with a set of
-    fonts. The GUI lets you select them individualy as files or all by
+    fonts. The GUI lets you select them individually as files or all by
     enabling the option "Include Default Hershey Fonts".
 
   - Make sure you have the necessary rights to use the font.
