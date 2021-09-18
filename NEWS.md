@@ -1,3 +1,7 @@
+# Release notes for 0.6.3
+  - add support for Hershey Fonts
+  - add command line option to set log level
+
 # Release notes for 0.6.2
   - improve ui for windows
   - include translation files in package
