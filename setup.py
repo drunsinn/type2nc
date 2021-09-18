@@ -22,12 +22,12 @@ setuptools.setup(
                        'locales/en/LC_MESSAGES/*.mo',
                        'locales/de/LC_MESSAGES/*.mo']},
     keywords="cnc klartext font freetype",
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-    ),
+    ],
     install_requires=['numpy>=1.6.2',
                       'scipy>=0.19.0',
                       'freetype-py>=1.1',
