@@ -49,6 +49,7 @@ installed on your system:
   - [scipy](https://www.scipy.org) \>=0.19.0
   - [freetype-py](https://github.com/rougier/freetype-py) \>=1.1
   - argparse \>=1.4.0
+  - [Hershey-Fonts](https://github.com/apshu/HersheyFonts) \>= 2.1.0
 
 ### Install from Python Packaging Index
 
@@ -75,12 +76,17 @@ installed. For Windows, follow the instructions on  [this github repo](https://g
     - <http://www.fontspace.com/category/open>
     - <https://www.theleagueofmoveabletype.com/>
 
+    The library for reading Hershey Fonts comes bundled with a set of
+    fonts. The GUI lets you select them individualy as files or all by
+    enabling the option "Include Default Hershey Fonts".
+
   - Make sure you have the necessary rights to use the font.
 
   - Open a command prompt and run python3 type2nc.py or double-click the
     `type2nc.py` file
 
-  - Select one or more font files
+  - Select one or more font files and/or select the option to use the default
+    Hersehy fonts
 
   - create and select an output folder for the results
 
