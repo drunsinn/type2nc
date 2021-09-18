@@ -17,64 +17,52 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: type2nc.py:326 type2nc.py:464
 msgid "Select Font File"
 msgstr "Schrift-Datei"
 
-#: type2nc.py:340 type2nc.py:479
 msgid "Select Destination Folder"
 msgstr "Zielordner"
 
-#: type2nc.py:354
+msgid "Include Default Hershey Fonts"
+msgstr "Standart Hershey Fonts ausgeben"
+
 msgid "Select Step Size"
 msgstr "Schrittweite"
 
-#: type2nc.py:369
 msgid "Create Demo Files"
 msgstr "Demo-Datei erstellen"
 
-#: type2nc.py:409
 msgid "Include Empty Label"
 msgstr "Leere LBL DEF erstellen"
 
-#: type2nc.py:380
 msgid "Generate"
 msgstr "Erstellen"
 
-#: type2nc.py:397
 msgid "ASCII 0x20-0x7E and Latin1 0x80-0xFF"
 msgstr "ASCII 0x20-0x7E und Latin1 0x80-0xFF"
 
-#: type2nc.py:409
 msgid "General Punctuation 0x2000-0x206F"
 msgstr "Allgemeine Satzzeichen 0x2000-0x206F"
 
-#: type2nc.py:421
 msgid "IPA Extension 0x0250-0x02AF"
 msgstr "IPA Extension 0x0250-0x02AF"
 
-#: type2nc.py:433
 msgid "Symbols 0x2190-0x23FF & 0x2600-0x27BF"
 msgstr "Symbole 0x2190-0x23FF & 0x2600-0x27BF"
 
-#: type2nc.py:445
 msgid "Lang 0x0370-0x077F & 0x4E00-0x9FFF"
 msgstr "Sprachen 0x0370-0x077F & 0x4E00-0x9FFF"
 
-#: type2nc.py:472
 #, python-format
 msgid "%d files selected"
 msgstr "%d Dateien ausgewählt"
 
-#: type2nc.py:484
 msgid "No folder selected"
 msgstr "Kein Ordner ausgewählt"
 
-#: type2nc.py:494
 msgid "Step Size"
 msgstr "Schrittweite"
 
-#: type2nc.py:494
 msgid ""
 "Step Size between 0.001 (very fine) and 0.2 (very coarse) for converting "
 "Splines"
@@ -82,26 +70,20 @@ msgstr ""
 "Schrittweite zwischen 0.001 (sehr fein) and 0.2 (sehr grob) für Wandlung von "
 "Splines"
 
-#: type2nc.py:497
 msgid "No step size selected"
 msgstr "Keine Schrittweite eingegeben"
 
-#: type2nc.py:509 type2nc.py:513 type2nc.py:517
 msgid "Missing parameter"
 msgstr "Fehlender Parameter"
 
-#: type2nc.py:509
 msgid "No font files selected"
-msgstr "Keine Schriftart asugewählt"
+msgstr "Keine Schriftart ausgewählt"
 
-#: type2nc.py:513
 msgid "No output folder selected"
 msgstr "Kein Zielordner ausgewählt"
 
-#: type2nc.py:563
 msgid "Finished"
 msgstr "Fertig"
 
-#: type2nc.py:563
 msgid "Finished processing all font files"
 msgstr "Umwandlung aller Dateien abgeschlossen"
