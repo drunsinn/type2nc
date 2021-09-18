@@ -31,6 +31,7 @@ setuptools.setup(
     install_requires=['numpy>=1.6.2',
                       'scipy>=0.19.0',
                       'freetype-py>=1.1',
-                      'argparse>=1.4.0'],
+                      'argparse>=1.4.0',
+                      'Hershey-Fonts>=2.1.0'],
     scripts=['type2nc/type2nc.py'],
 )
