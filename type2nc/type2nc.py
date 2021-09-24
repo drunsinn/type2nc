@@ -294,7 +294,8 @@ class Type2NC(object):
             char_lines.append("L Z+QL15 F+Q206\n")
             for point in path[1:]:
                 char_lines.append("L {0:s} F+Q207\n".format(point.scaled_str(scale_factor)))
-            char_lines.append("L Z+Q204 F+Q206\n")
+            char_lines.append("L IZ+0.01 F+Q206\n")
+            char_lines.append("L Z+Q204 FMAX\n")
         char_lines.append("L Z+QL32 FMAX\n")
 
         if label_name is not None: char_lines.append("LBL \"{0:s}_X-Advance\"\n".format(label_name))
