@@ -107,3 +107,4 @@ venv.bak/
 *.ttf
 
 temp/
+.vscode/launch.json
