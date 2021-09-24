@@ -430,7 +430,8 @@ class Type2NC_UI:
         self.chk_hershey["font"] = ft
         self.chk_hershey["justify"] = "left"
         self.chk_hershey["text"] = self.gt_("Include Default Hershey Fonts")
-        self.chk_hershey.place(x=20, y=current_y, width=180, height=component_height)
+        self.chk_hershey["anchor"] = "w"
+        self.chk_hershey.place(x=20, y=current_y, width=220, height=component_height)
         self.chk_hershey["onvalue"] = 1
         self.chk_hershey["offvalue"] = 0
         self.chk_hershey["variable"] = self.include_hershey
@@ -472,7 +473,8 @@ class Type2NC_UI:
         self.chk_generate_demos["font"] = ft
         self.chk_generate_demos["justify"] = "left"
         self.chk_generate_demos["text"] = self.gt_("Create Demo Files")
-        self.chk_generate_demos.place(x=20, y=current_y, width=150, height=component_height)
+        self.chk_generate_demos["anchor"] = "w"
+        self.chk_generate_demos.place(x=20, y=current_y, width=220, height=component_height)
         self.chk_generate_demos["onvalue"] = 1
         self.chk_generate_demos["offvalue"] = 0
         self.chk_generate_demos["variable"] = self.gen_demo_files
@@ -484,7 +486,8 @@ class Type2NC_UI:
         self.chk_empty_lbl["font"] = ft
         self.chk_empty_lbl["justify"] = "left"
         self.chk_empty_lbl["text"] = self.gt_("Include Empty Label")
-        self.chk_empty_lbl.place(x=20, y=current_y, width=150, height=component_height)
+        self.chk_empty_lbl["anchor"] = "w"
+        self.chk_empty_lbl.place(x=20, y=current_y, width=220, height=component_height)
         self.chk_empty_lbl["onvalue"] = 1
         self.chk_empty_lbl["offvalue"] = 0
         self.chk_empty_lbl["variable"] = self.include_empty_lbl
@@ -723,8 +726,9 @@ if __name__ == "__main__":
 
     if arguments.input is not None:
         if not arguments.output.is_dir():
-            logger.error("the output path '%s' is not a folder", arguments.output)
-            
+            logger.error("The output path '%s' is not a folder", arguments.output)
+            exit(-1)
+
         conv = Type2NC(output_folder=arguments.output, target_height=10, step_size=arguments.step_size, create_empty_labels=arguments.create_empty_label)
         for ff in arguments.input:
             if ff.is_file():
