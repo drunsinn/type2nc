@@ -120,7 +120,7 @@ L FQ207
 CALL LBL QS2
 ;
 QL10 = QL10 + 1 ;advance counter
-QL13 = QL20 ;save X-Advance
+QL13 = QL20 * Q514 ;save X-Advance
 FN 12: IF +QL10 LT +QL11 GOTO LBL "start"
 ;
 CALL LBL "end"
