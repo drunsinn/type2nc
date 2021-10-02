@@ -179,7 +179,7 @@ class Type2NC(object):
                     else:  # bezier curve, split into segments an add them to list
                         num_points = int(1.0 / self.__step_size)      
                         for t in np.linspace(0.0, 1.0, num_points, endpoint=True):
-                            path_points.append(self._point_on_curve(segment, t))
+                            path_points.append(self._point_on_curve(segment[:-1], t))
                             
                 # close path by addind the first point a second time
                 path_points.append(Point(x=contour_segments[0][0][0], y=contour_segments[0][0][1]))
