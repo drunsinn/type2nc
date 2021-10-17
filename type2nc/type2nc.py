@@ -345,7 +345,6 @@ class Type2NC(object):
         self._log.debug("created %d lines for char %s", len(char_lines), char_str)
         return char_lines
 
-
     def _create_empty_font_label(self, char_str, x_advance):
         self._log.debug("created label for empty char %s", char_str)
         char_lines = list()
@@ -755,14 +754,14 @@ if __name__ == "__main__":
     cmdl_parser.add_argument("-d", "--create_demos", action="store_true", default=False, required=False, help="if set, demo output will use cycle 225 for definition of parameters")
     cmdl_parser.add_argument("-e", "--create_empty_label", action="store_true", default=False, required=False, help="if set, create label for each selected character, even if it is not defined in the font. Stops errors because of missing label definition")
     cmdl_parser.add_argument("-l", "--log", metavar="logging level", default="warning", help="set logging level to critical, error, warn/warning, info or debug. Default is info")
-    cmdl_parser.add_argument("-n", "--numeric",  action="store_true", default=False, required=False, help="Only create numeric numeric label calls for character selection. reduces avalible cahrset to ASCII. makes program compatible with older controls?")
+    cmdl_parser.add_argument("-n", "--numeric",  action="store_true", default=False, required=False, help="Only create numeric numeric label calls for character selection. reduces available cahrset to ASCII. makes program compatible with older controls?")
 
     arguments = cmdl_parser.parse_args()
 
     selected_level = log_level_map.get(arguments.log.lower())
 
     if selected_level is None:
-        raise Exception("the given log level {:s} cant be mapped to an existing log level. It must be one of critical, error, warn/warning, info or debug")
+        raise Exception("the given log level {:s} can't be mapped to an existing log level. It must be one of critical, error, warn/warning, info or debug")
     logging.basicConfig(level=selected_level)
     logger = logging.getLogger('main')
     logger.info("startup")
