@@ -328,7 +328,7 @@ class Type2NC(object):
         self._log.debug("create label for char %s", char_str)
         char_lines = list()
         self._log.debug("writing label for character '%s': %d", char_str, ord(char_str))
-        char_lines.append("* -   Unicode Hex:0x{0:04x}\n".format(ord(char_str)))
+        char_lines.append("* - Unicode Hex:0x{0:04x} : {1:s}\n".format(ord(char_str), self._translate_label_name(char_str)))
         char_lines.append("LBL {0:d}\n".format(ord(char_str)))
         
         for path in contour_paths:
