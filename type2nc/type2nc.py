@@ -32,16 +32,17 @@ class Point():
 
 class Type2NC(object):
 
-    def __init__(self, output_folder, target_height, step_size, unicode_numbers=None, create_empty_labels=False):
+    def __init__(self, output_folder, target_height, step_size, unicode_numbers=None, create_empty_labels=False, only_numeric=False):
         self._log = logging.getLogger("Type2NC")
         self.__output_folder = output_folder.resolve(strict=True)
         self.__target_height = target_height
         self.__step_size = step_size
         self.__char_size_pt = 10
         self.__char_size_dpi = 140
+        self.__only_numeric = only_numeric
 
         self.__characters = list()
-        if unicode_numbers is None:
+        if unicode_numbers is None and self.__only_numeric is False:
             self.__characters.extend(list(range(0x0020, 0x007E + 1))) # BASIC_LATIN
             self.__characters.extend(list(range(0x0080, 0x00FF + 1))) # C1_CTRL_AND_LATIN1_SUPPLEMENT
             self.__characters.extend(list(range(0x2000, 0x206F + 1))) # GENERAL_PUNCTUATION
@@ -60,6 +61,8 @@ class Type2NC(object):
             self.__characters.extend(list(range(0x2600, 0x26FF + 1))) # MISC_SYMBOLS
             self.__characters.extend(list(range(0x2700, 0x27BF + 1))) # DINGBATS
             self.__characters.extend(list(range(0x4E00, 0x9FFF + 1))) # CJK_UNIFIED_IDEOGRAPHS_PART
+        elif self.__only_numeric is True:
+            self.__characters.extend(list(range(0x0020, 0x007E + 1))) # BASIC_LATIN
         else:
             self.__characters.extend(unicode_numbers)
         
@@ -95,7 +98,12 @@ class Type2NC(object):
             ncfp.write("; Generated: {:%Y-%m-%d %H:%M:%S}\n".format(datetime.datetime.today()))
             ncfp.write("; Number of characters: {0:d}\n;\n".format(len(self.__characters)))
 
-            with open(pathlib.Path.cwd().joinpath("templates", "pgm_head_template.H")) as template_file:
+            if self.__only_numeric:
+                template_path = pathlib.Path.cwd().joinpath("templates", "pgm_head_template_numeric.H")
+            else:
+                template_path = pathlib.Path.cwd().joinpath("templates", "pgm_head_template.H")
+
+            with open(template_path) as template_file:
                 ncfp.writelines(template_file)
 
             for char_code in self.__characters:
@@ -231,7 +239,12 @@ class Type2NC(object):
             ncfp.write("; Generated: {:%Y-%m-%d %H:%M:%S}\n".format(datetime.datetime.today()))
             ncfp.write("; Number of characters: {0:d}\n;\n".format(len(self.__characters)))
 
-            with open(pathlib.Path.cwd().joinpath("templates", "pgm_head_template.H")) as template_file:
+            if self.__only_numeric:
+                template_path = pathlib.Path.cwd().joinpath("templates", "pgm_head_template_numeric.H")
+            else:
+                template_path = pathlib.Path.cwd().joinpath("templates", "pgm_head_template.H")
+
+            with open(template_path) as template_file:
                 ncfp.writelines(template_file)
 
             for char_code in self.__characters:
@@ -301,7 +314,7 @@ class Type2NC(object):
         return Point(x=c_t_x, y=c_t_y)
     
     def _creat_font_label(self, char_str, contour_paths, x_advance, scale_factor):
-        self._log.debug("created label for char %s", char_str)
+        self._log.debug("create label for char %s", char_str)
         char_lines = list()
         label_name = self._translate_label_name(char_str)
         self._log.debug("writing label for character '%s': %d %s", char_str, ord(char_str), label_name)
@@ -329,6 +342,28 @@ class Type2NC(object):
         char_lines.append("LBL \"0x{0:04x}_X-Advance\"\n".format(ord(char_str)))
         char_lines.append("QL20 = {0:+f} ; X-Advance\n".format(x_advance * scale_factor))
         char_lines.append("LBL 0\n;\n")
+        self._log.debug("created %d lines for char %s", len(char_lines), char_str)
+        return char_lines
+
+    def _creat_numeric_font_label(self, char_str, contour_paths, x_advance, scale_factor):
+        self._log.debug("create label for char %s", char_str)
+        char_lines = list()
+        self._log.debug("writing label for character '%s': %d", char_str, ord(char_str))
+        char_lines.append("* - Unicode Hex:0x{0:04x} : {1:s}\n".format(ord(char_str), self._translate_label_name(char_str)))
+        char_lines.append("LBL {0:d}\n".format(ord(char_str)))
+        
+        for path in contour_paths:
+            char_lines.append("L {0:s} FMAX\n".format(path[0].scaled_str(scale_factor)))
+            char_lines.append("L Z+QL15 F+Q206\n")
+            for point in path[1:]:
+                char_lines.append("L {0:s} F+Q207\n".format(point.scaled_str(scale_factor)))
+            char_lines.append("L IZ+0.01 F+Q206\n")
+            char_lines.append("L Z+Q204 FMAX\n")
+        char_lines.append("L Z+QL32 FMAX\n")
+
+        char_lines.append("QL20 = {0:+f} ; X-Advance\n".format(x_advance * scale_factor))
+        char_lines.append("LBL 0\n;\n")
+        self._log.debug("created %d lines for char %s", len(char_lines), char_str)
         return char_lines
 
     def _create_empty_font_label(self, char_str, x_advance):
@@ -803,9 +838,6 @@ class Type2NC_UI:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger('main')
-    logger.info("startup")
     log_level_map = {'critical': logging.CRITICAL, 'error': logging.ERROR,
                      'warn': logging.WARNING, 'warning': logging.WARNING,
                      'info': logging.INFO, 'debug': logging.DEBUG}
@@ -818,21 +850,28 @@ if __name__ == "__main__":
     cmdl_parser.add_argument("-e", "--create_empty_label", action="store_true", default=False, required=False, help="if set, create label for each selected character, even if it is not defined in the font. Stops errors because of missing label definition")
     cmdl_parser.add_argument("-l", "--log", metavar="logging level", default="warning", help="set logging level to critical, error, warn/warning, info or debug. Default is info")
     cmdl_parser.add_argument("-m", "--message", metavar="message", default=None, type=str, help="Message to create as NCprogram")
+    cmdl_parser.add_argument("-n", "--numeric",  action="store_true", default=False, required=False, help="Only create numeric numeric label calls for character selection. reduces available cahrset to ASCII. makes program compatible with older controls?")
 
     arguments = cmdl_parser.parse_args()
 
     selected_level = log_level_map.get(arguments.log.lower())
 
     if selected_level is None:
-        raise Exception("the given log level {:s} cant be mapped to an existing log level. It must be one of critical, error, warn/warning, info or debug")
+        raise Exception("the given log level {:s} can't be mapped to an existing log level. It must be one of critical, error, warn/warning, info or debug")
     logging.basicConfig(level=selected_level)
+    logger = logging.getLogger('main')
+    logger.info("startup")
+    logger.setLevel(level=selected_level)
 
     if arguments.input is not None:
         if not arguments.output.is_dir():
             logger.error("The output path '%s' is not a folder", arguments.output)
             exit(-1)
+        
+        conv = Type2NC(output_folder=arguments.output, target_height=10,
+                       step_size=arguments.step_size, create_empty_labels=arguments.create_empty_label,
+                       only_numeric=arguments.numeric)
 
-        conv = Type2NC(output_folder=arguments.output, target_height=10, step_size=arguments.step_size, create_empty_labels=arguments.create_empty_label)
         for ff in arguments.input:
             if ff.is_file():
                 if arguments.message is not None:
