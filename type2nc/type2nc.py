@@ -26,6 +26,9 @@ class Point():
     def scaled_str(self, scale_factor=1.0):
         return "X{:+0.4f} Y{:+0.4f}".format(self.x * scale_factor, self.y * scale_factor)
 
+    def scaled_offset_str(self, scale_factor=1.0, offset_x=0.0, offset_y=0.0):
+        return "X{:+0.4f} Y{:+0.4f}".format((self.x * scale_factor) + offset_x,
+                                             (self.y * scale_factor) + offset_y)
 
 class Type2NC(object):
 
@@ -108,80 +111,15 @@ class Type2NC(object):
                 if char_index > 0:
                     self._log.debug("character '%s' available at index %d", chr(char_code), char_index)
 
-                    try:
-                        font_face.load_char(chr(char_code))
-                    except freetype.ft_errors.FT_Exception as e:
+                    contour_paths = self._path_from_charcode_freetype(font_face, char_code)
+                    x_advance = self._xadvance_from_charcode_freetype(font_face, char_code)
+
+                    if contour_paths is None:
                         if self.__create_empty_labels:
-                            self._log.error("character '%s' at index %d could not be loaded, replace with empty label. Error: %s", chr(char_code), char_index, e)
-                            self._log.debug("character '%s' was selected but is not available, add empty label", chr(char_code))
+                            self._log.info("character '%s' was selected but is not available, add empty label", chr(char_code))
                             ncfp.writelines(self._create_empty_font_label(chr(char_code), x_advance=0))
                         else:
-                            self._log.error("character '%s' at index %d could not be loaded, skip. Error: %s", chr(char_code), char_index, e)
-                        break
-
-                    c_glyph_slot = font_face.glyph
-
-                    contour_paths = list()
-
-                    self._log.debug("character '%s' advance X:%d Y:%d linear horizontal advance:%d", chr(char_code), c_glyph_slot.advance.x, c_glyph_slot.advance.y, c_glyph_slot.linearHoriAdvance)
-
-                    if c_glyph_slot.outline.n_points > 1:
-                        self._log.debug("character '%s' has %d points in %d contour(s) with %d tags", chr(char_code), c_glyph_slot.outline.n_points, c_glyph_slot.outline.n_contours, len(c_glyph_slot.outline.tags))
-                        
-                        start, end = 0, 0
-
-                        for i in range(0, c_glyph_slot.outline.n_contours):
-                            path_points = list()
-                            contour_segments = list()
-                            end = c_glyph_slot.outline.contours[i]
-                            
-                            # slice lists of points and tags according to length of contour
-                            contour_tags = c_glyph_slot.outline.tags[start:end+1]
-                            contour_tags.append(c_glyph_slot.outline.tags[0])
-                            contour_points = c_glyph_slot.outline.points[start:end+1]
-                            contour_points.append(c_glyph_slot.outline.points[0])
-
-                            # add first point in list to segment to start things of
-                            contour_segments.append([contour_points[0], ])
-
-                            # split the list of all the points in separate segments
-                            # with the right amount for each contour type
-                            for j in range(1, len(contour_points)): # skip first point as it is already in the list
-                                contour_segments[-1].append(contour_points[j])
-                                if contour_tags[j] & (1 << 0) and j < (len(contour_points) - 1):
-                                    contour_segments.append([contour_points[j], ])
-
-                            # finally, check each segment for the number of points it contains.
-                            # if only two the segmet is a line so we can just add the end point to our list
-                            # if there are more than two points in the segment we have to step along the bezier curve
-                            for segment in contour_segments:
-                                if len(segment) == 2:  # line segment, add endpoint to list
-                                    path_points.append(Point(x=segment[0][0], y=segment[0][1]))
-                                else:  # bezier curve, split into segments an add them to list
-                                    num_points = int(1.0 / self.__step_size)      
-                                    for t in np.linspace(0.0, 1.0, num_points, endpoint=True):
-                                        path_points.append(self._point_on_curve(segment, t))
-                            
-                            # close path by addind the first point a second time
-                            path_points.append(Point(x=contour_segments[0][0][0], y=contour_segments[0][0][1]))
-                            
-                            start = end + 1
-                            contour_paths.append(path_points)
-                            self._log.debug("created %d points for character contour %d",  len(path_points), i)
-
-                        self._log.debug("created %d paths for character", len(contour_paths))
-                        
-                    else:
-                        self._log.debug("character '%s' is empty, skipping", chr(char_code))
-
-                    if c_glyph_slot.advance.x > 0:
-                        x_advance = c_glyph_slot.advance.x
-                    else:
-                        self._log.debug("character '%s' has no advance x value, use glyph width %d", chr(char_code), c_glyph_slot.metrics.width)
-                        x_advance = c_glyph_slot.metrics.width
-
-                    if self.__only_numeric:
-                        ncfp.writelines(self._creat_numeric_font_label(chr(char_code), contour_paths, x_advance, scale_factor=scale_factor))
+                            self._log.info("character '%s' at index %d could not be loaded, skip. Error: %s", chr(char_code), char_index)
                     else:
                         ncfp.writelines(self._creat_font_label(chr(char_code), contour_paths, x_advance, scale_factor))
                     
@@ -199,6 +137,82 @@ class Type2NC(object):
 
         self._log.info("finished writing %s", nc_file_name)
 
+    def _path_from_charcode_freetype(self, font_face, char_code):
+
+        try:
+            font_face.load_char(char_code)
+        except freetype.ft_errors.FT_Exception as e:
+            char_index = font_face.get_char_index(char_code)
+            self._log.error("character '%s' at index %d could not be loaded. Error: %s", chr(char_code), char_index, e)
+            return None
+
+        c_glyph_slot = font_face.glyph
+
+        contour_paths = list()
+
+        self._log.debug("character '%s' advance X:%d Y:%d linear horizontal advance:%d", char_code, c_glyph_slot.advance.x, c_glyph_slot.advance.y, c_glyph_slot.linearHoriAdvance)
+
+        if c_glyph_slot.outline.n_points > 1:
+            self._log.debug("character '%s' has %d points in %d contour(s) with %d tags", char_code, c_glyph_slot.outline.n_points, c_glyph_slot.outline.n_contours, len(c_glyph_slot.outline.tags))
+                        
+            start, end = 0, 0
+
+            for i in range(0, c_glyph_slot.outline.n_contours):
+                path_points = list()
+                contour_segments = list()
+                end = c_glyph_slot.outline.contours[i]
+                            
+                # slice lists of points and tags according to length of contour
+                contour_tags = c_glyph_slot.outline.tags[start:end+1]
+                contour_tags.append(c_glyph_slot.outline.tags[0])
+                contour_points = c_glyph_slot.outline.points[start:end+1]
+                contour_points.append(c_glyph_slot.outline.points[0])
+
+                # add first point in list to segment to start things of
+                contour_segments.append([contour_points[0], ])
+
+                # split the list of all the points in separate segments
+                # with the right amount for each contour type
+                for j in range(1, len(contour_points)): # skip first point as it is already in the list
+                    contour_segments[-1].append(contour_points[j])
+                    if contour_tags[j] & (1 << 0) and j < (len(contour_points) - 1):
+                        contour_segments.append([contour_points[j], ])
+
+                # finally, check each segment for the number of points it contains.
+                # if only two the segmet is a line so we can just add the end point to our list
+                # if there are more than two points in the segment we have to step along the bezier curve
+                for segment in contour_segments:
+                    if len(segment) == 2:  # line segment, add endpoint to list
+                        path_points.append(Point(x=segment[0][0], y=segment[0][1]))
+                    else:  # bezier curve, split into segments an add them to list
+                        num_points = int(1.0 / self.__step_size)      
+                        for t in np.linspace(0.0, 1.0, num_points, endpoint=True):
+                            path_points.append(self._point_on_curve(segment[:-1], t))
+                            
+                # close path by addind the first point a second time
+                path_points.append(Point(x=contour_segments[0][0][0], y=contour_segments[0][0][1]))
+
+                start = end + 1
+                contour_paths.append(path_points)
+                self._log.debug("created %d points for character contour %d",  len(path_points), i)
+
+            self._log.debug("created %d paths for character", len(contour_paths))
+                        
+        else:
+            self._log.debug("character '%s' is empty, skipping", char_code)
+
+        return contour_paths
+
+    def _xadvance_from_charcode_freetype(self, font_face, char_code):
+        font_face.load_char(char_code)
+        c_glyph_slot = font_face.glyph
+        if c_glyph_slot.advance.x > 0:
+            x_advance = c_glyph_slot.advance.x
+        else:
+            self._log.debug("character '%s' has no advance x value, use glyph width %d", char_code, c_glyph_slot.metrics.width)
+            x_advance = c_glyph_slot.metrics.width
+        return x_advance
+    
     def convert_hershey(self, font_file):
         hshf = HersheyFonts()
         if isinstance(font_file, pathlib.Path):
@@ -234,33 +248,12 @@ class Type2NC(object):
                 ncfp.writelines(template_file)
 
             for char_code in self.__characters:
-                
-                count = 0
-                contour_paths = list()
-                for glyph in hshf.glyphs_for_text(chr(char_code)):
-                    if count > 0:
-                        raise Exception
-                    count += 1
+                contour_paths = self._path_from_charcode_hershey(hshf, chr(char_code))
+                x_advance = self._xadvance_from_charcode_hershey(hshf, chr(char_code))
 
-                    x_advance = glyph.char_width + 1.0
-
-                    self._log.debug("character '%s' advance X:%d", chr(char_code), x_advance)
-
-                    for stroke in glyph.strokes:
-                        path_points = list()
-                        for c_pair in stroke:
-                            x_coor = c_pair[0] - glyph.left_offset
-                            y_coor = -1 * c_pair[1]
-                            path_points.append(Point(x=x_coor, y=y_coor))
-                        contour_paths.append(path_points)
-                    self._log.debug("created %d paths for character", len(contour_paths))
-                    
-                    if self.__only_numeric:
-                        ncfp.writelines(self._creat_numeric_font_label(chr(char_code), contour_paths, x_advance, scale_factor=scale_factor))
-                    else:
-                        ncfp.writelines(self._creat_font_label(chr(char_code), contour_paths, x_advance, scale_factor=scale_factor))
-
-                if len(contour_paths) == 0:
+                if len(contour_paths) > 0:
+                    ncfp.writelines(self._creat_font_label(chr(char_code), contour_paths, x_advance, scale_factor=scale_factor))
+                else:
                     if self.__create_empty_labels:
                         self._log.debug("character '%s' was selected but is not available, add empty label", chr(char_code))
                         ncfp.writelines(self._create_empty_font_label(chr(char_code), x_advance=0))
@@ -272,6 +265,34 @@ class Type2NC(object):
 
             ncfp.write("END PGM {0:s} MM".format(nc_file_name.upper()))
 
+    def _path_from_charcode_hershey(self, hshf, char_code):
+        contour_paths = list()
+        count = 0
+        x_advance = None
+        for glyph in hshf.glyphs_for_text(char_code):
+            if count > 0:
+                raise Exception("recived unexpected number of glyphs {:d} for {:s}".format(count, char_code))
+            count += 1
+
+            for stroke in glyph.strokes:
+                path_points = list()
+                for c_pair in stroke:
+                    x_coor = c_pair[0] - glyph.left_offset
+                    y_coor = -1 * c_pair[1]
+                    path_points.append(Point(x=x_coor, y=y_coor))
+                contour_paths.append(path_points)
+            self._log.debug("created %d paths for character", len(contour_paths))
+        return contour_paths
+
+    def _xadvance_from_charcode_hershey(self, hshf, char_code):
+        glyph_generator = hshf.glyphs_for_text(char_code)
+        glyph = next(glyph_generator, None)
+        if glyph is None:
+            self._log.debug("character '%s' is not availible for this font", char_code)
+            return None
+        x_advance = glyph.char_width + 1.0
+        self._log.debug("character '%s' advance X:%d", char_code, x_advance)
+        return x_advance
 
     def _point_on_curve(self, point_list, distance_factor):
         """Get x and y coordinate for point along a bezier curve relative to
@@ -423,6 +444,80 @@ class Type2NC(object):
                 demo_file_content = template_file.read()
                 output_file.write(demo_file_content.format(block_heigth, filler))
         self._log.debug("demo file for cycle based calling written successfully")
+
+    def convert_to_static(self, font_file, message):
+
+        font_name = font_file.name.replace(font_file.suffix, '')
+
+        if len(message) >= 8:
+            cut_length = 8
+        else:
+            cut_length = len(message)
+
+        nc_file_name = "static_" + message[:cut_length] + "_" + font_name
+        nc_file_name = nc_file_name.replace(" ", "_")
+        nc_file_name = nc_file_name.upper()
+
+        output_file = self.__output_folder.joinpath(nc_file_name + ".H")
+
+        current_x = 0.0
+
+        if font_file.suffix.lower() in ".jhf":
+            fnt = HersheyFonts()
+            fnt.load_font_file(font_file)
+            fnt.normalize_rendering(self.__target_height * 0.8)
+            scale_factor = 1.0
+            font_title = "; Hershey Font File: {0:s}\n".format(font_name)
+        else:
+            fnt = freetype.Face(str(font_file.resolve(strict=True)))
+            fnt.set_char_size(height=self.__char_size_pt * self.__char_size_dpi,
+                              hres=self.__char_size_dpi, vres=self.__char_size_dpi)
+            scale_factor = self.__target_height / (abs(fnt.bbox.yMax) + abs(fnt.bbox.yMin))
+            font_title = "; {0:s} - {1:s}\n".format(fnt.family_name.decode("utf-8"), fnt.style_name.decode("utf-8"))
+                
+        with open(output_file, "w") as output_file:
+            output_file.write("BEGIN PGM {0:s} MM\n".format(nc_file_name))
+            output_file.write("BLK FORM 0.1 Z X+0 Y+0 Z-20\n")
+            output_file.write("BLK FORM 0.2 X+200 Y+20 Z+0\n")
+
+            output_file.write(";\n")
+
+            output_file.write(";\n; static Font PGM generated by type2nc\n")
+            output_file.write(font_title)
+            output_file.write("; Generated: {:%Y-%m-%d %H:%M:%S}\n".format(datetime.datetime.today()))
+            output_file.write("; Message: {:s}\n;\n".format(message))
+
+            output_file.write("Q201 = -0.5 ; Depth\n")
+            output_file.write("Q204 = 2 ; Safe Height\n")
+            output_file.write("Q206 = 300 ; Plunge Feed Rate\n")
+            output_file.write("Q207 = 500 ; milling feed rate\n;\n")
+
+            output_file.write('TOOL CALL "GRAVIER" Z S5000 F500\n')
+            output_file.write("M3\n;\n")
+
+            for character in message:
+                output_file.write("* - {:s}\n".format(self._translate_label_name(character)))
+
+                if font_file.suffix.lower() in ".jhf":
+                    contour_paths = self._path_from_charcode_hershey(fnt, character)
+                    x_advance = self._xadvance_from_charcode_hershey(fnt, character)
+                else:
+                    contour_paths = self._path_from_charcode_freetype(fnt, character)
+                    x_advance = self._xadvance_from_charcode_freetype(fnt, character)
+                
+                for path in contour_paths:
+                    output_file.write("L {0:s} FMAX\n".format(path[0].scaled_offset_str(scale_factor=scale_factor,
+                                                                                        offset_x=current_x)))
+                    output_file.write("L Z+Q201 F+Q206\n")
+                    for point in path[1:]:
+                        output_file.write("L {0:s} F+Q207\n".format(point.scaled_offset_str(scale_factor=scale_factor,
+                                                                                        offset_x=current_x)))
+                    output_file.write("L IZ+0.01 F+Q206\n")
+                    output_file.write("L Z+Q204 FMAX\n")
+                output_file.write(";\n;\n")
+                current_x += x_advance * scale_factor
+
+            output_file.write("END PGM {0:s} MM\n".format(nc_file_name))
 
 
 class Type2NC_UI:
@@ -754,6 +849,7 @@ if __name__ == "__main__":
     cmdl_parser.add_argument("-d", "--create_demos", action="store_true", default=False, required=False, help="if set, demo output will use cycle 225 for definition of parameters")
     cmdl_parser.add_argument("-e", "--create_empty_label", action="store_true", default=False, required=False, help="if set, create label for each selected character, even if it is not defined in the font. Stops errors because of missing label definition")
     cmdl_parser.add_argument("-l", "--log", metavar="logging level", default="warning", help="set logging level to critical, error, warn/warning, info or debug. Default is info")
+    cmdl_parser.add_argument("-m", "--message", metavar="message", default=None, type=str, help="Message to create as NCprogram")
     cmdl_parser.add_argument("-n", "--numeric",  action="store_true", default=False, required=False, help="Only create numeric numeric label calls for character selection. reduces available cahrset to ASCII. makes program compatible with older controls?")
 
     arguments = cmdl_parser.parse_args()
@@ -778,10 +874,13 @@ if __name__ == "__main__":
 
         for ff in arguments.input:
             if ff.is_file():
-                if ff.suffix.lower() in ".jhf":
-                    conv.convert_hershey(ff)
+                if arguments.message is not None:
+                    conv.convert_to_static(ff, arguments.message)
                 else:
-                    conv.convert_freetype(ff)
+                    if ff.suffix.lower() in ".jhf":
+                        conv.convert_hershey(ff)
+                    else:
+                        conv.convert_freetype(ff)
         
         if arguments.create_demos:
             conv.generate_demo_files(arguments.input)
