@@ -496,7 +496,7 @@ class Type2NC(object):
             output_file.write("M3\n;\n")
 
             for character in message:
-                output_file.write("* - {:s}\n".format(character))
+                output_file.write("* - {:s}\n".format(self._translate_label_name(character)))
 
                 if font_file.suffix.lower() in ".jhf":
                     contour_paths = self._path_from_charcode_hershey(fnt, character)
